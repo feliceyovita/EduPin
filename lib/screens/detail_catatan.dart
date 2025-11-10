@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/section_card.dart';
 import '../widgets/pill_tag.dart';
 import '../widgets/action_icon_button.dart';
@@ -97,10 +98,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         ActionIconButton(
           icon: Icons.flag_outlined,
           tooltip: 'Laporkan',
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Terima kasih, laporan dummy terkirim')),
-          ),
+          onTap: () => context.push('/report', extra: d),
         ),
         const Spacer(),
         ActionIconButton(
