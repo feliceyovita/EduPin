@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../screens/home_screen.dart';
 import '../screens/detail_catatan.dart';
 import '../screens/report_note_screen.dart';
 import '../models/note_details.dart';
+import '../screens/upload_catatan.dart';
 
 GoRouter buildRouter() {
   final rootKey = GlobalKey<NavigatorState>();
+
   return GoRouter(
     navigatorKey: rootKey,
-    initialLocation: '/_debug/detail',
+    initialLocation: '/home',
     routes: [
+      // ➜ HOME route WAJIB ADA
+      GoRoute(
+          path: '/upload',
+          builder: (_, __) => const UploadCatatanScreen()),
+      GoRoute(
+        path: '/home',
+        builder: (context, state) => const HomeScreen(),
+      ),
+
       GoRoute(
         path: '/_debug/detail',
         builder: (context, state) {
@@ -19,12 +31,8 @@ GoRouter buildRouter() {
             subject: 'Matematika',
             grade: 'Kelas 12',
             tags: ['kalkulus','Integral','ParsialII','MTKez'],
-            description: 'Catatan lengkap tentang integral parsial meliputi rumus dasar, langkah-langkah penyelesaian, dan contoh soal beserta pembahasan. Sangat cocok untuk persiapan ujian matematika tingkat SMA dan kuliah (matematika dasar)',
-            imageAssets: [
-              'assets/images/sample_note.jpeg',
-              'assets/images/sample_note.jpeg',
-              'assets/images/sample_note.jpeg',
-            ],
+            description: 'Catatan lengkap…',
+            imageAssets: ['assets/images/sample_note.jpeg'],
             publisher: const Publisher(
               name: 'Just Kidding Rowling',
               handle: '@jkrowling',
@@ -35,13 +43,13 @@ GoRouter buildRouter() {
           return NoteDetailPage(data: dummy);
         },
       ),
-      GoRoute(                                     // ⬅️ baru
+
+      GoRoute(
         path: '/report',
-        builder: (context, state) {
-          final note = state.extra as NoteDetail;  // kirim via extra
-          return ReportNoteScreen(note: note);
-        },
+        builder: (context, state) =>
+            ReportNoteScreen(note: state.extra as NoteDetail),
       ),
     ],
   );
 }
+
