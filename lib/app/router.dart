@@ -5,15 +5,26 @@ import '../screens/detail_catatan.dart';
 import '../screens/report_note_screen.dart';
 import '../models/note_details.dart';
 import '../screens/upload_catatan.dart';
+import '../screens/login_screen.dart';
+import '../screens/signup_screen.dart';
+import '../screens/forgot_password_screen.dart';
 
 GoRouter buildRouter() {
   final rootKey = GlobalKey<NavigatorState>();
 
   return GoRouter(
     navigatorKey: rootKey,
-    initialLocation: '/home',
+    initialLocation: '/login',
     routes: [
-      // ➜ HOME route WAJIB ADA
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen()),
+      GoRoute(
+          path: '/signup',
+          builder: (context, state) => const SignupScreen()),
+      GoRoute(
+          path: '/forgot_password',
+          builder: (context, state) => const ForgotPasswordScreen()),
       GoRoute(
           path: '/upload',
           builder: (_, __) => const UploadCatatanScreen()),

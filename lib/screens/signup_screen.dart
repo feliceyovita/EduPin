@@ -3,14 +3,14 @@ import 'package:go_router/go_router.dart';
 import '../widgets/logoApp_bgBlue.dart';
 import '../widgets/text_field.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -66,26 +66,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Center(
-                        child: Text(
-                          'Selamat Datang',
-                          style: TextStyle(
-                            fontSize: screenWidth * 0.06,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Center(
-                        child: Text(
-                          'Masuk ke akun anda untuk melanjutkan',
+                        child:Text(
+                          'Buat akun baru untuk mulai berbagi catatan!',
                           style: TextStyle(
                             fontSize: screenWidth * 0.035,
                             color: Colors.grey[700],
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.04),
+
+                      SizedBox(height: screenHeight * 0.02),
+
+                      // Nama Lengkap
+                      Text(
+                        'Nama Lengkap',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800]),
+                      ),
+                      const SizedBox(height: 6),
+                      textField(
+                        hintText: 'Masukkan nama lengkap',
+                        prefixIcon: Icons.person_2_outlined,
+                      ),
+                      const SizedBox(height: 20),
 
                       // Email
                       Text(
@@ -98,6 +102,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       textField(
                         hintText: 'Masukkan email anda',
                         prefixIcon: Icons.email_outlined,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // sekolah / universitas
+                      Text(
+                        'Sekolah/Universitas',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800]),
+                      ),
+                      const SizedBox(height: 6),
+                      textField(
+                        hintText: 'Nama sekolah / universitas',
+                        prefixIcon: Icons.school_outlined,
                       ),
                       const SizedBox(height: 20),
 
@@ -115,29 +133,96 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: Icons.lock_outline,
                         suffixIcon: Icons.visibility_off_outlined,
                       ),
+                      const SizedBox(height: 20),
 
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            context.go('/forgot_password');
-                          },
-                          child: const Text(
-                            'Lupa Password?',
-                            style: TextStyle(color: Color(0xFF1E88E5)),
-                          ),
-                        ),
+                      // Konfirmasi Password
+                      Text(
+                        'Konfirmasi Password',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800]),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 6),
+                      textField(
+                        hintText: 'Konfirmasi password',
+                        obscureText: true,
+                        prefixIcon: Icons.lock_outline,
+                        suffixIcon: Icons.visibility_off_outlined,
+                      ),
+                      const SizedBox(height: 40),
 
-                      // Tombol Masuk
+                      // Checkbox persetujuan
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          StatefulBuilder(
+                            builder: (context, setState) {
+                              bool isChecked = false;
+                              return Checkbox(
+                                value: isChecked,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    isChecked = value ?? false;
+                                  });
+                                },
+                                activeColor: Color(0xFF1E88E5),
+                              );
+                            },
+                          ),
+                          Expanded(
+                            child: Wrap(
+                              children: [
+                                const Text(
+                                  'Saya setuju dengan ',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    // bagian mengarahkan ke syarat dan ketentuan
+                                  },
+                                  child: const Text(
+                                    'Syarat dan Ketentuan ',
+                                    style: TextStyle(
+                                      color: Color(0xFF1E88E5),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Text(
+                                  'serta ',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    // bagian mengarahkan ke kebijakan dan privasi
+                                  },
+                                  child: const Text(
+                                    'Kebijakan Privasi ',
+                                    style: TextStyle(
+                                      color: Color(0xFF1E88E5),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Text(
+                                  'EduPin',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+
+                      // Tombol Daftar
                       SizedBox(
                         width: double.infinity,
                         height: screenHeight * 0.065,
                         child: ElevatedButton(
                           onPressed: () {
-                            context.go('/home');
+                            context.go('/login');
                           },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.zero,
@@ -161,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                'Masuk',
+                                'Daftar',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: screenWidth * 0.045,
@@ -175,33 +260,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // atau
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'atau',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: screenHeight * 0.03),
-
                       // Daftar
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Belum punya akun? ',
+                            'Sudah punya akun? ',
                             style: TextStyle(color: Colors.grey[700]),
                           ),
                           GestureDetector(
                             onTap: () {
-                              context.go('/signup');
+                              context.go('/login');
                             },
                             child: const Text(
-                              'Daftar Sekarang',
+                              'Masuk Sekarang',
                               style: TextStyle(
                                 color: Color(0xFF1E88E5),
                                 fontWeight: FontWeight.bold,

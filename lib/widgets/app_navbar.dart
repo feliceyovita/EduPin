@@ -11,6 +11,7 @@ class AppNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.white,
       currentIndex: currentIndex,
       onTap: onTap,
       items: const [
@@ -24,8 +25,8 @@ class AppNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Icon(
-              Icons.add_circle,
-              color: Colors.blue,
+            Icons.add_circle,
+            color: Colors.blue,
           ),
           label: "Unggah",
         ),
