@@ -8,24 +8,24 @@ import '../screens/upload_catatan.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/forgot_password_screen.dart';
-
-// 1. TAMBAHKAN IMPORT INI
 import '../screens/edit_catatan_screen.dart';
+import '../screens/pin_baru.dart';
 
 GoRouter buildRouter() {
   final rootKey = GlobalKey<NavigatorState>();
 
   return GoRouter(
     navigatorKey: rootKey,
-    initialLocation: '/edit_catatan', // Ini sudah benar
+    initialLocation: '/detail',
     routes: [
-      // 2. TAMBAHKAN RUTE INI
       GoRoute(
         path: '/edit_catatan',
         builder: (context, state) => const EditCatatanScreen(),
       ),
-
-      // --- Rute lain yang sudah ada ---
+      GoRoute(
+        path: '/pin_baru',
+        builder: (context, state) => const PinBaruScreen(),
+      ),
       GoRoute(
           path: '/login',
           builder: (context, state) => const LoginScreen()),
@@ -43,15 +43,16 @@ GoRouter buildRouter() {
         builder: (context, state) => const HomeScreen(),
       ),
 
+      // ⬇️ route detail yang dipakai sebagai initial
       GoRoute(
-        path: '/_debug/detail',
+        path: '/detail',
         builder: (context, state) {
           final dummy = NoteDetail(
             id: 'd1',
             title: 'Rumus Integral dan Diferensial',
             subject: 'Matematika',
             grade: 'Kelas 12',
-            tags: ['kalkulus','Integral','ParsialII','MTKez'],
+            tags: ['kalkulus', 'Integral', 'ParsialII', 'MTKez'],
             description: 'Catatan lengkap…',
             imageAssets: ['assets/images/sample_note.jpeg'],
             publisher: const Publisher(

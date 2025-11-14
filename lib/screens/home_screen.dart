@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 4),
                   const Expanded(
                     child: Text(
-                      'Tambah Catatan Baru',
+                      'Tambah Pin Baru',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
