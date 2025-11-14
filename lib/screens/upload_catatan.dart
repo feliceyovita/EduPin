@@ -116,6 +116,16 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
     final isWide = size.width >= 700;
     final horizontalPad = isWide ? size.width * 0.15 : 16.0;
 
+    final _inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade400),
+    );
+
+    final _focusBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFEFF6FF),
       appBar: AppBar(
@@ -216,7 +226,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
   Widget _buildMainFormCard() {
     final OutlineInputBorder _inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+      borderSide: const BorderSide(color: Color(0xFFB3BECD), width: 1),
     );
 
     final OutlineInputBorder _focusBorder = OutlineInputBorder(
@@ -276,7 +286,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            value: _selectedSubject,
+            initialValue: _selectedSubject,
             decoration: InputDecoration(
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -299,7 +309,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            value: _selectedGrade,
+            initialValue: _selectedGrade,
             decoration: InputDecoration(
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -504,7 +514,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: const Color(0xFF2563EB),
           ),
         ],
