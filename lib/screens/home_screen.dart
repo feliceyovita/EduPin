@@ -61,8 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onNavBarTap(int index) {
     if (index == 2) {
-      // tombol tambah → buka bottom sheet
-      _showUploadBottomSheet();
+      _showUploadSheet();
       return;
     }
 
@@ -71,79 +70,120 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showUploadBottomSheet() {
+  void _showUploadSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent, // Wajib transparan agar rounded corner terlihat
       builder: (ctx) {
-        final bottomPadding = MediaQuery.of(ctx).padding.bottom;
+        final bottomInset = MediaQuery.of(ctx).viewPadding.bottom;
 
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding + 16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF2563EB), // biru seperti desain
-              borderRadius: BorderRadius.circular(24),
+        return Container(
+          width: double.infinity,
+          // Dekorasi ini sudah benar
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Baris atas: tombol X + judul + subjudul
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    // Icon close di kiri
-                    _CloseButton(),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: _UploadHeaderText(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Icon besar di tengah
-                Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(
-                      Icons.upload_file_rounded,
-                      size: 32,
-                      color: Color(0xFF2563EB),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Tombol "Mulai Unggah"
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF2563EB),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(ctx);      // tutup bottom sheet
-                      context.go('/upload');   // pindah ke halaman form upload
-                    },
-                    child: const Text('Mulai Unggah'),
-                  ),
-                ),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              stops: [0.20, 0.61],
+              colors: [
+                Color(0xFF009EF7),
+                Color(0xFF2583FF),
               ],
             ),
+          ),
+          // Padding internal untuk konten,
+          // kita tambahkan bottomInset agar konten tidak tertutup nav bar
+          padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // baris judul + tombol X
+              Row(
+                children: [
+                  const _CloseButton(),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'Tambah Catatan Baru',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Bagikan catatan Anda dengan komunitas',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              InkWell(
+                onTap: () {
+                  Navigator.pop(ctx);       // tutup sheet dulu
+                  context.push('/upload');  // lalu ke halaman form
+                },
+                // Menyesuaikan bentuk ripple effect agar bulat
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/Upload.jpg',
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 5),
+
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx); // tutup sheet dulu
+                    context.push('/upload'); // lalu ke halaman form
+                  },
+                  child: const Text(
+                    'Mulai Unggah',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700, // Opsional
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -165,8 +205,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Widget kecil biar kode header lebih rapi
-
 class _CloseButton extends StatelessWidget {
   const _CloseButton();
 
@@ -177,35 +215,6 @@ class _CloseButton extends StatelessWidget {
       constraints: const BoxConstraints(),
       icon: const Icon(Icons.close, color: Colors.white),
       onPressed: () => Navigator.pop(context),
-    );
-  }
-}
-
-class _UploadHeaderText extends StatelessWidget {
-  const _UploadHeaderText();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Unggah Catatan Baru',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'Bagikan catatan anda dengan komunitas',
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 }

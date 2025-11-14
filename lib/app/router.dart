@@ -9,16 +9,26 @@ import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/forgot_password_screen.dart';
 
+// 1. TAMBAHKAN IMPORT INI
+import '../screens/edit_catatan_screen.dart';
+
 GoRouter buildRouter() {
   final rootKey = GlobalKey<NavigatorState>();
 
   return GoRouter(
     navigatorKey: rootKey,
-    initialLocation: '/login',
+    initialLocation: '/edit_catatan', // Ini sudah benar
     routes: [
+      // 2. TAMBAHKAN RUTE INI
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen()),
+        path: '/edit_catatan',
+        builder: (context, state) => const EditCatatanScreen(),
+      ),
+
+      // --- Rute lain yang sudah ada ---
+      GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen()),
       GoRoute(
           path: '/signup',
           builder: (context, state) => const SignupScreen()),
@@ -63,4 +73,3 @@ GoRouter buildRouter() {
     ],
   );
 }
-

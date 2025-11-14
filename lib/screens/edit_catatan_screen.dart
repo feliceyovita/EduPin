@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../widgets/section_card.dart';
 
-class UploadCatatanScreen extends StatefulWidget {
-  const UploadCatatanScreen({super.key});
+class EditCatatanScreen extends StatefulWidget {
+  const EditCatatanScreen({
+    super.key,
+  });
 
   @override
-  State<UploadCatatanScreen> createState() => _UploadCatatanScreenState();
+  State<EditCatatanScreen> createState() => _EditCatatanScreenState();
 }
 
-class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
+class _EditCatatanScreenState extends State<EditCatatanScreen> {
   // ---------- CONTROLLER & STATE ----------
   final _titleC = TextEditingController();
   final _descC = TextEditingController();
@@ -51,13 +52,25 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
         _descC.text.trim().isNotEmpty &&
         _selectedSubject != null &&
         _selectedGrade != null &&
-        _tags.isNotEmpty; // minimal 1 tag
-    // _schoolC boleh kosong (opsional)
+        _tags.isNotEmpty;
   }
 
   @override
   void initState() {
     super.initState();
+    // Simulasi data yang sudah ada
+    _titleC.text = 'Rumus Integral dan Diferensial';
+    _descC.text =
+    'Catatan lengkap bab integral dan diferensial untuk kalkulus 1.';
+    _schoolC.text = 'Universitas Sumatera Utara';
+    _selectedSubject = 'Matematika dan Komputasi';
+    _selectedGrade = 'Kuliah';
+    _tags.addAll(['kalkulus', 'matematika', 'semester 1']);
+    _hasImage = true;
+    _publikasi = true;
+    _izinkanUnduh = false;
+
+    // Listener untuk validasi tombol
     _titleC.addListener(_onFormChange);
     _descC.addListener(_onFormChange);
     _schoolC.addListener(_onFormChange);
@@ -85,28 +98,36 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
     _tagInputC.clear();
   }
 
-  void _onPickImage() {
-    // nanti ganti pakai image picker / file picker
+  void _onChangeImage() {
+    // Logika untuk mengganti gambar utama
     setState(() {
       _hasImage = true;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Dummy: gambar dianggap sudah dipilih (belum terhubung ke storage).',
+          'Dummy: Logika ganti gambar...',
         ),
       ),
     );
   }
 
-  void _onSubmit() {
-    // nanti di sini logic upload ke backend
+  void _onAddNewImage() {
+    // Logika untuk menambah gambar baru
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Catatan berhasil dipublikasikan (dummy).'),
+        content: Text('Dummy: Logika tambah gambar baru...'),
       ),
     );
-    // setelah submit, bisa pop balik
+  }
+
+  void _onSaveChanges() {
+    // Logika simpan perubahan ke backend
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Catatan berhasil diperbarui (dummy).'),
+      ),
+    );
     context.pop();
   }
 
@@ -116,16 +137,6 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
     final isWide = size.width >= 700;
     final horizontalPad = isWide ? size.width * 0.15 : 16.0;
 
-    final _inputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: Colors.grey.shade400),
-    );
-
-    final _focusBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
-    );
-
     return Scaffold(
       backgroundColor: const Color(0xFFEFF6FF),
       appBar: AppBar(
@@ -133,8 +144,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: const Text('Tambah Catatan Baru'),
-        // ⬇️ ikon back: balik ke halaman sebelumnya (apa pun itu)
+        title: const Text('Edit Catatan'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -153,13 +163,21 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildImagePicker(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildImagePreview(), // Preview gambar yang sudah ada
+                      const SizedBox(width: 16),
+                      _buildAddImageButton(), // Tombol tambah gambar baru
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   _buildMainFormCard(),
                   const SizedBox(height: 16),
                   _buildPublishSettingsCard(),
                   const SizedBox(height: 16),
-                  _buildSubmitButton(),
+                  _buildSaveChangesButton(), // Tombol gradien
                   const SizedBox(height: 4),
                   const Text(
                     'Dengan mengunggah, Anda setuju dengan kebijakan Komunitas EduPin.',
@@ -172,26 +190,20 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           },
         ),
       ),
-      // ⬇️ NAVBAR DIHAPUS, jadi fullscreen form
-      // bottomNavigationBar: AppNavBar(...),
     );
   }
 
-  // ---------- WIDGET: PICKER GAMBAR ----------
-  Widget _buildImagePicker() {
-    final borderColor =
-    _hasImage ? Colors.blue : const Color(0xFFCBD5F5); // biru muda
-
+  // ---------- WIDGET: PREVIEW GAMBAR ----------
+  Widget _buildImagePreview() {
     return Center(
       child: GestureDetector(
-        onTap: _onPickImage,
+        onTap: _onChangeImage,
         child: Container(
           width: 140,
           height: 140,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor, width: 1.5),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x14000000),
@@ -199,24 +211,73 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
                 offset: Offset(0, 4),
               ),
             ],
+            image: const DecorationImage(
+              image: AssetImage('assets/images/sample_note.jpeg'), // Placeholder
+              fit: BoxFit.cover,
+            ),
           ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _hasImage ? Icons.image_rounded : Icons.cloud_upload_outlined,
-                color: Colors.blue,
-                size: 36,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Maks 10MB\nper Gambar',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12),
-              ),
-            ],
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.edit_outlined,
+                  color: Colors.white,
+                  size: 36,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Ganti Gambar',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.white),
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ---------- WIDGET: TOMBOL TAMBAH GAMBAR ----------
+  Widget _buildAddImageButton() {
+    return GestureDetector(
+      onTap: _onAddNewImage,
+      child: Container(
+        width: 100, // Dibuat lebih kecil dari preview
+        height: 140, // Tinggi disamakan agar sejajar
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFCBD5F5), width: 1.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              color: Colors.blue,
+              size: 36,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Tambah Gambar',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
         ),
       ),
     );
@@ -224,13 +285,14 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
 
   // ---------- CARD UTAMA FORM ----------
   Widget _buildMainFormCard() {
+    // Border radius 10px
     final OutlineInputBorder _inputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: Color(0xFFB3BECD), width: 1),
     );
 
     final OutlineInputBorder _focusBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
     );
 
@@ -239,7 +301,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------------- JUDUL ----------------
+          // JUDUL
           const Text(
             'Judul Catatan *',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -251,7 +313,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
               hintText: 'Contoh: Rumus Integral dan Penerapannya',
               prefixIcon: const Icon(
                 Icons.notes_outlined,
-                color: Color(0xFF2563EB), // biru
+                color: Color(0xFF2563EB),
               ),
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -260,7 +322,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ---------------- DESKRIPSI ----------------
+          // DESKRIPSI
           const Text(
             'Deskripsi *',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -279,14 +341,14 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ---------------- MATA PELAJARAN ----------------
+          // MATA PELAJARAN
           const Text(
             'Mata Pelajaran *',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            initialValue: _selectedSubject,
+            value: _selectedSubject, // 'value' dipakai untuk data yg sudah ada
             decoration: InputDecoration(
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -302,14 +364,14 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ---------------- TINGKAT / KELAS ----------------
+          // TINGKAT / KELAS
           const Text(
             'Tingkat/Kelas *',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            initialValue: _selectedGrade,
+            value: _selectedGrade, // 'value' dipakai untuk data yg sudah ada
             decoration: InputDecoration(
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -325,7 +387,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ---------------- SEKOLAH OPSIONAL ----------------
+          // SEKOLAH OPSIONAL
           const Text(
             'Asal Sekolah/Universitas (opsional)',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -342,7 +404,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ---------------- TAGS ----------------
+          // TAGS
           const Text(
             'Tags *',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -357,7 +419,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
                     hintText: 'Tambah tag...',
                     prefixIcon: const Icon(
                       Icons.tag_outlined,
-                      color: Color(0xFF2563EB), // biru
+                      color: Color(0xFF2563EB),
                     ),
                     border: _inputBorder,
                     enabledBorder: _inputBorder,
@@ -376,7 +438,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(10), // Samakan
                     ),
                   ),
                   onPressed: _onAddTag,
@@ -522,18 +584,64 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
     );
   }
 
-  // ---------- TOMBOL SUBMIT ----------
-  Widget _buildSubmitButton() {
-    return SizedBox(
+  // ---------- TOMBOL SIMPAN (Versi Gradient) ----------
+  Widget _buildSaveChangesButton() {
+    final bool isEnabled = _isFormValid;
+
+    // Definisikan gradient birunya di sini
+    const gradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      stops: [0.20, 0.61],
+      colors: [
+        Color(0xFF009EF7),
+        Color(0xFF2583FF),
+      ],
+    );
+
+    // Style untuk teks dan ikon (saat enabled)
+    final textStyle = const TextStyle(
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+    const iconColor = Colors.white;
+
+    // Style untuk teks dan ikon (saat disabled)
+    final disabledTextStyle = TextStyle(
+      fontWeight: FontWeight.w600,
+      color: Colors.white.withOpacity(0.8),
+    );
+    final disabledIconColor = Colors.white.withOpacity(0.8);
+
+    return Container(
       width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: _isFormValid ? _onSubmit : null,
-        icon: const Icon(Icons.share_rounded),
-        label: const Text('Publikasikan Catatan'),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
+      decoration: BoxDecoration(
+        gradient: isEnabled ? gradient : null,
+        color: isEnabled ? null : Colors.grey.shade400,
+        borderRadius: const BorderRadius.all(Radius.circular(100)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap:  isEnabled ? _onSaveChanges : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.save_outlined,
+                  color: isEnabled ? iconColor : disabledIconColor,
+                ),
+                const SizedBox(width: 8), // Jarak antara ikon dan teks
+                Text(
+                  'Simpan Perubahan',
+                  style: isEnabled ? textStyle : disabledTextStyle,
+                ),
+              ],
+            ),
           ),
         ),
       ),
