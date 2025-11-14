@@ -86,7 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
-            // Gradient linear ini sudah benar sesuai gambar Figma
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
