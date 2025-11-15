@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 import '../widgets/profile_widgets.dart';
 import '../utils/custom_notification.dart';
-
-import 'edit_catatan_screen.dart';
 
 const String kFontFamily = 'AlbertSans';
 
@@ -300,7 +299,6 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gambar
           Container(
             width: 80,
             height: 80,
@@ -314,10 +312,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
               ),
             ),
           ),
-
           const SizedBox(width: 16),
-
-          // Kolom Informasi (Kanan)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,18 +367,15 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                     ),
                   ],
                 ),
-
                 if (_isEditingNotes) ...[
                   const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start, // Rata Kiri
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       OutlinedButton.icon(
+                        // --- EDIT CATATAN PAKAI GO ROUTER ---
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const EditCatatanScreen()),
-                          );
+                          context.push('/edit_catatan');
                         },
                         icon: Image.asset('assets/images/edit_2.png',
                             width: 12, height: 12, color: const Color(0xFF2782FF)),
@@ -392,15 +384,16 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                         style: OutlinedButton.styleFrom(
                           backgroundColor: const Color(0xFFE8F1FF),
                           foregroundColor: const Color(0xFF2782FF),
-                          side: const BorderSide(color: Color(0xFF2782FF), width: 1),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4), // Ramping
+                          side: const BorderSide(
+                              color: Color(0xFF2782FF), width: 1),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 4),
                           minimumSize: const Size(0, 30),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: const StadiumBorder(),
                         ),
                       ),
                       const SizedBox(width: 10),
-
                       OutlinedButton.icon(
                         onPressed: () {},
                         icon: Image.asset('assets/images/delete.png',
@@ -411,7 +404,8 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                           backgroundColor: const Color(0xFFFFEBEB),
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red, width: 1),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4), // Ramping
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 4),
                           minimumSize: const Size(0, 30),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: const StadiumBorder(),
@@ -432,23 +426,275 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
 // ==================================================
 // 4. TAMPILAN TAB PENGATURAN
 // ==================================================
-class ProfileSettingsTab extends StatelessWidget {
+class ProfileSettingsTab extends StatefulWidget {
   const ProfileSettingsTab({super.key});
 
   @override
+  State<ProfileSettingsTab> createState() => _ProfileSettingsTabState();
+}
+
+class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
+  bool _notificationsEnabled = true;
+
+  // --- NAVIGASI PAKAI GO ROUTER (ANTI CRASH) ---
+  void _forceNavigateToLogin(BuildContext context) {
+    // 1. Tutup Dialog (pake context.pop dari GoRouter atau Navigator.pop)
+    Navigator.of(context).pop();
+
+    // 2. Langsung Pindah ke Login
+    // context.go() akan membersihkan stack dan menjadikan /login halaman utama
+    // Ini mencegah error navigtor locked.
+    Future.delayed(Duration.zero, () {
+      if (context.mounted) {
+        context.go('/login');
+      }
+    });
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+                  child: Image.asset('assets/images/logout__red.png', width: 24, height: 24, color: const Color(0xFFEF4444)),
+                ),
+                const SizedBox(height: 16),
+                const Text('Keluar dari akun?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily)),
+                const SizedBox(height: 6),
+                const Text('Sesi akan berakhir', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: kFontFamily)),
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    // --- PANGGIL FUNGSI GO ROUTER ---
+                    onPressed: () => _forceNavigateToLogin(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE11D48), elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Keluar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, fontFamily: kFontFamily)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Batal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151), fontFamily: kFontFamily)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+                  child: Image.asset('assets/images/alert__triangle.png', width: 24, height: 24, color: const Color(0xFFEF4444)),
+                ),
+                const SizedBox(height: 16),
+                const Text('Apakah Anda yakin ingin menghapus akun?', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily, height: 1.3)),
+                const SizedBox(height: 6),
+                const Text('Data akun ini akan hilang dan tidak bisa dipulihkan.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: kFontFamily)),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // Jeda sedikit sebelum buka dialog password
+                      Future.delayed(Duration.zero, () {
+                        if (context.mounted) _showPasswordConfirmationDialog(context);
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE11D48), elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Konfirmasi Hapus Akun', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, fontFamily: kFontFamily)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Batal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151), fontFamily: kFontFamily)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPasswordConfirmationDialog(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    bool isPasswordVisible = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              backgroundColor: Colors.white,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(child: Text('Konfirmasi Hapus Akun', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily))),
+                    const Divider(height: 20),
+                    Text('Email', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade700, fontFamily: kFontFamily)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: emailController,
+                      decoration: InputDecoration(hintText: 'Masukkan email anda', hintStyle: const TextStyle(fontSize: 13), prefixIcon: const Icon(Icons.mail_outline, color: Colors.grey, size: 20), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16)),
+                      keyboardType: TextInputType.emailAddress, style: const TextStyle(fontFamily: kFontFamily, fontSize: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Password', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade700, fontFamily: kFontFamily)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: !isPasswordVisible,
+                      decoration: InputDecoration(
+                        hintText: 'Masukkan password anda', hintStyle: const TextStyle(fontSize: 13), prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey, size: 20),
+                        suffixIcon: IconButton(icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey, size: 20), onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                      ),
+                      style: const TextStyle(fontFamily: kFontFamily, fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        // --- PANGGIL FUNGSI GO ROUTER ---
+                        onPressed: () => _forceNavigateToLogin(context),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
+                        child: const Text('Hapus Akun', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: kFontFamily)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.settings_outlined, size: 50, color: Colors.grey),
-            SizedBox(height: 10),
-            Text(
-              'Pengaturan Akun',
-              style: TextStyle(color: Colors.grey, fontFamily: kFontFamily),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Pengaturan Akun', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily)),
+                  const Divider(height: 30),
+                  Row(
+                    children: [
+                      Image.asset('assets/images/notification.png', width: 24, height: 24, color: Colors.grey.shade700),
+                      const SizedBox(width: 15),
+                      const Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Notifikasi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF333333), fontFamily: kFontFamily)),
+                          Text('Terima notifikasi untuk aktivitas baru', style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: kFontFamily), overflow: TextOverflow.ellipsis),
+                        ]),
+                      ),
+                      Switch(value: _notificationsEnabled, onChanged: (val) => setState(() => _notificationsEnabled = val), activeColor: const Color(0xFF2782FF)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFFFE5E5), width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Zona Berbahaya', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFE11D48), fontFamily: kFontFamily)),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showDeleteConfirmationDialog(context),
+                      icon: Image.asset('assets/images/delete.png', width: 18, height: 18, color: Colors.red),
+                      label: const Text('Hapus Akun', style: TextStyle(fontFamily: kFontFamily, fontWeight: FontWeight.bold, fontSize: 15)),
+                      style: OutlinedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red, side: const BorderSide(color: Color(0xFFFFE5E5), width: 1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showLogoutConfirmationDialog(context),
+                      icon: Image.asset('assets/images/logout_white.png', width: 18, height: 18),
+                      label: const Text('Keluar dari Akun', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: kFontFamily)),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
