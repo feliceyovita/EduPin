@@ -16,7 +16,7 @@ GoRouter buildRouter() {
 
   return GoRouter(
     navigatorKey: rootKey,
-    initialLocation: '/detail',
+    initialLocation: '/login',
     routes: [
       GoRoute(
         path: '/edit_catatan',
