@@ -5,24 +5,30 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 40), // biar ada jarak dari atas
-        Image.asset(
-          "assets/images/logo.png",
-          width: 100,
-          height: 100,
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          "EduPin",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.blue,
+      ),
+      child: Row(
+        children: [
+          Image.asset(
+            "assets/images/logo.png",
+            width: 50,
+            height: 50,
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          const Text(
+            "EduPin",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

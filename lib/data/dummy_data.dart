@@ -1,0 +1,93 @@
+import '../models/note_details.dart';
+
+const dummyPublisher = Publisher(
+  name: "Sarah Chen",
+  handle: "@sarahchen",
+  institution: "Universitas Teknologi Bandung",
+  avatarAsset: "assets/images/sample_note.jpeg",
+);
+
+final dummyNotes = [
+  NoteDetail(
+    id: "1",
+    title: "Rumus Integral dan Diferensial",
+    subject: "Matematika dan Komputasi",
+    grade: "Kelas 12",
+    tags: ["kalkulus"],
+    description:
+    "Catatan lengkap mengenai rumus integral dasar dan teknik diferensial.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "2",
+    title: "Rumus Integral dan Diferensial",
+    subject: "Matematika dan Komputasi",
+    grade: "Kelas 12",
+    tags: ["kalkulus", "turunan"],
+    description:
+    "Pembahasan turunan beserta contoh soal dan grafik fungsi.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "3",
+    title: "Fisika Dasar Energi",
+    subject: "Ilmu Pengetahuan Alam",
+    grade: "Kelas 10",
+    tags: ["fisika", "energi"],
+    description: "Catatan materi energi, usaha, dan hukum kekekalan energi.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "4",
+    title: "Ilmu Sosial Ekonomi",
+    subject: "Ilmu Sosial",
+    grade: "Kelas 11",
+    tags: ["ekonomi"],
+    description: "Dasar-dasar ekonomi dan pemahaman inflasi.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "5",
+    title: "Dasar Seni Rupa",
+    subject: "Seni dan Desain",
+    grade: "Kelas 10",
+    tags: ["seni", "warna"],
+    description: "Pengantar seni rupa, warna primer, dan komposisi.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "6",
+    title: "Teknik Mekanika Dasar",
+    subject: "Teknik dan Rekayasa",
+    grade: "Kelas 12",
+    tags: ["mekanika"],
+    description: "Konsep gaya, momen, dan torsi untuk teknik dasar.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "7",
+    title: "Pengembangan Diri Pelajar",
+    subject: "Pendidikan dan Pengembangan Diri",
+    grade: "Umum",
+    tags: ["motivasi"],
+    description: "Catatan motivasi untuk meningkatkan potensi diri.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+  NoteDetail(
+    id: "8",
+    title: "Hukum Dasar Negara",
+    subject: "Hukum dan Regulasi",
+    grade: "Kelas 12",
+    tags: ["hukum"],
+    description: "Dasar hukum tata negara Indonesia.",
+    imageAssets: ["assets/images/sample_note.jpeg"],
+    publisher: dummyPublisher,
+  ),
+];

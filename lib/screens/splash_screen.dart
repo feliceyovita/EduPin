@@ -1,3 +1,4 @@
+import 'package:edupin/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 // 1. Ganti import dari login_screen ke home_screen
 import 'package:edupin/screens/home_screen.dart';
@@ -21,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         // 3. Ubah tujuan navigasi ke HomeScreen
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     });
   }

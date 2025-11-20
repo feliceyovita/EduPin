@@ -20,8 +20,8 @@ class AppNavBar extends StatelessWidget {
           label: "Beranda",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          label: "Cari",
+          icon: Icon(Icons.push_pin_outlined),
+          label: "Papan",
         ),
         BottomNavigationBarItem(
           icon: Icon(
@@ -31,8 +31,8 @@ class AppNavBar extends StatelessWidget {
           label: "Unggah",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.push_pin_outlined),
-          label: "Pin",
+          icon: Icon(Icons.notifications_none_outlined),
+          label: "Notifikasi",
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_2_outlined),

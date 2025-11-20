@@ -1,5 +1,7 @@
+import 'package:edupin/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../screens/home_screen.dart';
 import '../screens/detail_catatan.dart';
 import '../screens/report_note_screen.dart';
@@ -10,14 +12,79 @@ import '../screens/signup_screen.dart';
 import '../screens/forgot_password_screen.dart';
 import '../screens/edit_catatan_screen.dart';
 import '../screens/pin_baru.dart';
+import '../widgets/app_navbar.dart';
 
 GoRouter buildRouter() {
   final rootKey = GlobalKey<NavigatorState>();
+  int _getIndex(String location) {
+    if (location.startsWith('/home')) return 0;
+    if (location.startsWith('/papan')) return 1;
+    if (location.startsWith('/unggah')) return 2;
+    if (location.startsWith('/pin')) return 3;
+    if (location.startsWith('/profile')) return 4;
+    return 0;
+  }
+
+  void _onTap(BuildContext context, int index) {
+    switch (index) {
+      case 0: context.go('/home'); break;
+      case 1: context.go('/papan'); break;
+      case 2: context.go('/unggah'); break;
+      case 3: context.go('/notifikasi'); break;
+      case 4: context.go('/profile'); break;
+    }
+  }
 
   return GoRouter(
     navigatorKey: rootKey,
     initialLocation: '/login',
     routes: [
+      ShellRoute(
+        builder: (context, state, child) {
+          return Scaffold(
+            body: child,
+            bottomNavigationBar: AppNavBar(
+              currentIndex: _getIndex(state.uri.toString()),
+              onTap: (i) => _onTap(context, i),
+            ),
+          );
+        },
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: '/papan',
+            builder: (context, state) => const Placeholder(),
+          ),
+          GoRoute(
+            path: '/unggah',
+            builder: (context, state) => const UploadCatatanScreen(),
+          ),
+          GoRoute(
+            path: '/notifikasi',
+            builder: (context, state) => const PinBaruScreen(),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+        ],
+      ),
+
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/forgot_password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
       GoRoute(
         path: '/edit_catatan',
         builder: (context, state) => const EditCatatanScreen(),
@@ -27,23 +94,9 @@ GoRouter buildRouter() {
         builder: (context, state) => const PinBaruScreen(),
       ),
       GoRoute(
-          path: '/login',
-          builder: (context, state) => const LoginScreen()),
-      GoRoute(
-          path: '/signup',
-          builder: (context, state) => const SignupScreen()),
-      GoRoute(
-          path: '/forgot_password',
-          builder: (context, state) => const ForgotPasswordScreen()),
-      GoRoute(
-          path: '/upload',
-          builder: (_, __) => const UploadCatatanScreen()),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomeScreen(),
+        path: '/upload',
+        builder: (context, state) => const UploadCatatanScreen(),
       ),
-
-      // ⬇️ route detail yang dipakai sebagai initial
       GoRoute(
         path: '/detail',
         builder: (context, state) {
@@ -65,7 +118,6 @@ GoRouter buildRouter() {
           return NoteDetailPage(data: dummy);
         },
       ),
-
       GoRoute(
         path: '/report',
         builder: (context, state) =>
