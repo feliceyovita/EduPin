@@ -172,8 +172,6 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           },
         ),
       ),
-      // ⬇️ NAVBAR DIHAPUS, jadi fullscreen form
-      // bottomNavigationBar: AppNavBar(...),
     );
   }
 

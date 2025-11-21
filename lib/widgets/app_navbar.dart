@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'buttom_sheet.dart';
 
 class AppNavBar extends StatelessWidget {
-
   final int currentIndex;
   final Function(int) onTap;
 
-  const AppNavBar({super.key, required this.currentIndex, required this.onTap});
+  const AppNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +17,13 @@ class AppNavBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,
       currentIndex: currentIndex,
-      onTap: onTap,
+      onTap: (index) {
+        if (index == 2) {
+          showUploadSheet(context);
+          return;
+        }
+        onTap(index);
+      },
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home),

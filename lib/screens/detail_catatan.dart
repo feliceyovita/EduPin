@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/buttom_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/pill_tag.dart';
 import '../widgets/action_icon_button.dart';
@@ -305,7 +306,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           onTap: () {
             setState(() => pinned = !pinned);
             if (pinned) {
-              _showPinSheet();
+              showPinSheet(context);
             }
           },
         ),
