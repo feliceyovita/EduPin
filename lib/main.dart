@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'app/router.dart';
+import 'app/router.dart';  // Panggil router global di sini
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final router = buildRouter();
     return MaterialApp.router(
       title: 'Edupin',
       theme: ThemeData(fontFamily: 'AlbertSans', primarySwatch: Colors.blue),
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routerConfig: router,
+      routerConfig: router, // router TIDAK dibuat ulang
     );
   }
 }

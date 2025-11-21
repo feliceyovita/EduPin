@@ -2,6 +2,7 @@ import 'package:edupin/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 // 1. Ganti import dari login_screen ke home_screen
 import 'package:edupin/screens/home_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -17,17 +18,12 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    // Delay 3 detik → pindah ke HomeScreen
     Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        // 3. Ubah tujuan navigasi ke HomeScreen
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      context.go('/login');
     });
+
   }
 
-  // 4. dispose() sekarang bisa lebih sederhana
   @override
   void dispose() {
     super.dispose();

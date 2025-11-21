@@ -14,6 +14,9 @@ class PinCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFDBEAFE),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,9 +31,9 @@ class PinCard extends StatelessWidget {
               child: Image.asset(
                 data.imageAssets.isNotEmpty
                     ? data.imageAssets[0]
-                    : "assets/images/default.jpg",
+                    : "assets/images/gambar_catatan.jpg",
                 width: double.infinity,
-                height: 120,
+                height: 150,
                 fit: BoxFit.cover,
               ),
             ),
@@ -60,13 +63,13 @@ class PinCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: Colors.blue,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     data.subject,
                     style: const TextStyle(
-                      color: Colors.blue,
+                      color: Colors.white,
                       fontSize: 12,
                     ),
                   ),
@@ -83,8 +86,9 @@ class PinCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
+                        color: Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade100),
                       ),
                       child: Text(
                         "#$tag",
