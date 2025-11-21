@@ -16,7 +16,7 @@ final dummyNotes = [
     tags: ["kalkulus"],
     description:
     "Catatan lengkap mengenai rumus integral dasar dan teknik diferensial.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -27,7 +27,7 @@ final dummyNotes = [
     tags: ["kalkulus", "turunan"],
     description:
     "Pembahasan turunan beserta contoh soal dan grafik fungsi.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -37,7 +37,7 @@ final dummyNotes = [
     grade: "Kelas 10",
     tags: ["fisika", "energi"],
     description: "Catatan materi energi, usaha, dan hukum kekekalan energi.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -47,7 +47,7 @@ final dummyNotes = [
     grade: "Kelas 11",
     tags: ["ekonomi"],
     description: "Dasar-dasar ekonomi dan pemahaman inflasi.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -57,7 +57,7 @@ final dummyNotes = [
     grade: "Kelas 10",
     tags: ["seni", "warna"],
     description: "Pengantar seni rupa, warna primer, dan komposisi.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -67,7 +67,7 @@ final dummyNotes = [
     grade: "Kelas 12",
     tags: ["mekanika"],
     description: "Konsep gaya, momen, dan torsi untuk teknik dasar.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -77,7 +77,7 @@ final dummyNotes = [
     grade: "Umum",
     tags: ["motivasi"],
     description: "Catatan motivasi untuk meningkatkan potensi diri.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
   NoteDetail(
@@ -87,7 +87,7 @@ final dummyNotes = [
     grade: "Kelas 12",
     tags: ["hukum"],
     description: "Dasar hukum tata negara Indonesia.",
-    imageAssets: ["assets/images/sample_note.jpeg"],
+    imageAssets: ["assets/images/gambar_catatan.png"],
     publisher: dummyPublisher,
   ),
 ];

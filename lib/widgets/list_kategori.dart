@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class ListKategori extends StatelessWidget {
   final List<String> kategori = const [
+    "Semua",
     "Matematika dan Komputasi",
     "Ilmu Pengetahuan Alam",
     "Ilmu Sosial",
@@ -12,6 +13,7 @@ class ListKategori extends StatelessWidget {
   ];
 
   final List<IconData> kategoriIcons = const [
+    Icons.home_rounded,
     Icons.calculate,
     Icons.science,
     Icons.people,
@@ -48,7 +50,7 @@ class ListKategori extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blue : Colors.white,
+                color: isSelected ? Colors.grey.shade400 : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.blue),
               ),
