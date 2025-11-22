@@ -248,7 +248,6 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
 
           _notes.isEmpty
               ? Container(
@@ -266,6 +265,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
             ),
           )
               : ListView.separated(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _notes.length,

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/home_screen.dart';
 import '../screens/detail_catatan.dart';
 import '../screens/report_note_screen.dart';
+import '../screens/profile_user.dart';
 import '../models/note_details.dart';
 import '../screens/upload_catatan.dart';
 import '../screens/login_screen.dart';
@@ -131,6 +132,14 @@ final GoRouter router = GoRouter(
       path: '/report',
       builder: (context, state) =>
           ReportNoteScreen(note: state.extra as NoteDetail),
+    ),
+    GoRoute(
+      path: '/profile_user',
+      builder: (context, state) {
+        final publisherData = state.extra as Publisher;
+
+        return ProfileUserScreen(publisher: publisherData);
+      },
     ),
   ],
 );

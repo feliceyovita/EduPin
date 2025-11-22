@@ -368,8 +368,13 @@ class _NoteDetailPageState extends State<NoteDetailPage>
       ),
     );
 
-    // ---------- PUBLISHER CARD ----------
-    final publisherCard = PublisherCard(p: d.publisher);
+// ---------- PUBLISHER CARD ----------
+    final publisherCard = GestureDetector(
+      onTap: () {
+        context.push('/profile_user', extra: d.publisher);
+      },
+      child: PublisherCard(p: d.publisher),
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFF6FF),
