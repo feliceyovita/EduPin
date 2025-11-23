@@ -1,4 +1,5 @@
 import 'package:edupin/screens/notifikasi_screen.dart';
+import 'package:edupin/screens/papan_screen.dart';
 import 'package:edupin/screens/profile_screen.dart';
 import 'package:edupin/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -66,7 +67,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/papan',
-          builder: (context, state) => const Placeholder(),
+          builder: (context, state) => const PapanScreen(),
         ),
         GoRoute(
           path: '/notifikasi',

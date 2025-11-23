@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "67802230616",
+    "project_id": "edupin-1e337",
+    "storage_bucket": "edupin-1e337.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67802230616:android:fb15e87685d540173fff2d",
+        "android_client_info": {
+          "package_name": "com.example.edupin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "67802230616-j7m8afujp0j8eqpqsqaodm36qfdtikmg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.edupin",
+            "certificate_hash": "4d690bd3c456ed4d11c7c3640e187ea8c06a24f5"
+          }
+        },
+        {
+          "client_id": "67802230616-d1f0nhuqhpbsgcr215vs3kib646stvrb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvDohmv6YjinCBwx-mp45n-IVwHAYtBRA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "67802230616-d1f0nhuqhpbsgcr215vs3kib646stvrb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

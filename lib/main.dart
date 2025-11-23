@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
-import 'app/router.dart';  // Panggil router global di sini
+import 'app/router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';   // dari flutterfire configure
 
-void main() => runApp(const MyApp());
+void main() async {
+  // 1. Buat main async
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Inisialisasi Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -20,7 +32,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routerConfig: router, // router TIDAK dibuat ulang
+      routerConfig: router,
     );
   }
 }
