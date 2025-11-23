@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/note_details.dart';
 
-class PinCard extends StatelessWidget {
+class PinCard extends StatefulWidget {
   final NoteDetail data;
 
   const PinCard({super.key, required this.data});
+
+  @override
+  State<PinCard> createState() => _PinCardState();
+}
+
+class _PinCardState extends State<PinCard> {
+  bool isLiked = false;
+  int likeCount = 156; // bisa juga ambil dari note model jika ada
 
   @override
   Widget build(BuildContext context) {
@@ -24,16 +32,16 @@ class PinCard extends StatelessWidget {
           // Thumbnail
           InkWell(
             onTap: () {
-              context.go('/detail', extra: data);
+              context.push('/detail', extra: widget.data);
             },
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.asset(
-                data.imageAssets.isNotEmpty
-                    ? data.imageAssets[0]
+                widget.data.imageAssets.isNotEmpty
+                    ? widget.data.imageAssets[0]
                     : "assets/images/gambar_catatan.jpg",
                 width: double.infinity,
-                height: 150,
+                height: 200,
                 fit: BoxFit.cover,
               ),
             ),
@@ -45,20 +53,36 @@ class PinCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Judul
-                Text(
-                  data.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.data.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        context.push('/pin_baru');
+                      },
+                      child: const Icon(
+                        Icons.push_pin_outlined,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                    )
+                  ],
                 ),
 
                 const SizedBox(height: 6),
 
-                // Subject bubble
+                // Subject
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
@@ -67,7 +91,7 @@ class PinCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    data.subject,
+                    widget.data.subject,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -81,7 +105,7 @@ class PinCard extends StatelessWidget {
                 Wrap(
                   spacing: 4,
                   runSpacing: -4,
-                  children: data.tags.map((tag) {
+                  children: widget.data.tags.map((tag) {
                     return Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
@@ -103,13 +127,51 @@ class PinCard extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                // Publisher
-                Text(
-                  "by ${data.publisher.name}",
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade700,
-                  ),
+                // Publisher + Like button
+                Row(
+                  children: [
+                    Text(
+                      "by ${widget.data.publisher.name}",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const Spacer(),
+
+                    // LIKE BUTTON (TOGGLE)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (isLiked) {
+                            isLiked = false;
+                            likeCount--;
+                          } else {
+                            isLiked = true;
+                            likeCount++;
+                          }
+                        });
+                      },
+                      child: Row(
+                        children: [
+                          Icon(
+                            isLiked ? Icons.favorite : Icons.favorite_border,
+                            size: 16,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            likeCount.toString(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

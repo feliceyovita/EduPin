@@ -1,8 +1,8 @@
+import 'package:edupin/screens/notifikasi_screen.dart';
 import 'package:edupin/screens/profile_screen.dart';
 import 'package:edupin/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../screens/home_screen.dart';
 import '../screens/detail_catatan.dart';
 import '../screens/report_note_screen.dart';
@@ -20,7 +20,7 @@ int _getIndex(String location) {
   if (location.startsWith('/home')) return 0;
   if (location.startsWith('/papan')) return 1;
   if (location.startsWith('/unggah')) return 2;
-  if (location.startsWith('/pin')) return 3;
+  if (location.startsWith('/notifikasi')) return 3;
   if (location.startsWith('/profile')) return 4;
   return 0;
 }
@@ -70,7 +70,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/notifikasi',
-          builder: (context, state) => const PinBaruScreen(),
+          builder: (context, state) => const NotifikasiScreen(),
         ),
         GoRoute(
           path: '/profile',

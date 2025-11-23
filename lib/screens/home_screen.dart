@@ -55,56 +55,63 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+
+        // 🟦 Scaffold tetap dipakai, tapi padding atas DIHAPUS
         Expanded(
           child: Scaffold(
-            backgroundColor: Colors.grey[100],
-            body: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 10),
-                      ListKategori(
-                        selectedIndex: selectedCategory,
-                        onSelected: (index) {
-                          setState(() => selectedCategory = index);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        const double minCardWidth = 180;
-                        int crossAxisCount =
-                        (constraints.maxWidth / minCardWidth).floor();
+            backgroundColor: const Color(0xFFF0F5F9),
+            body: MediaQuery.removePadding(
+              context: context,
+              removeTop: true, // 👈 HILANGKAN JARAK ATAS
 
-                        if (crossAxisCount < 2) crossAxisCount = 2;
-                        if (crossAxisCount > 5) crossAxisCount = 5;
-
-                        return GridView.builder(
-                          itemCount: dummyNotes.length,
-                          gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            mainAxisExtent: 290,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                          itemBuilder: (_, index) =>
-                              PinCard(data: dummyNotes[index]),
-                        );
-                      },
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 10),
+                        ListKategori(
+                          selectedIndex: selectedCategory,
+                          onSelected: (index) {
+                            setState(() => selectedCategory = index);
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          const double minCardWidth = 180;
+                          int crossAxisCount =
+                          (constraints.maxWidth / minCardWidth).floor();
+
+                          if (crossAxisCount < 2) crossAxisCount = 2;
+                          if (crossAxisCount > 5) crossAxisCount = 5;
+
+                          return GridView.builder(
+                            itemCount: dummyNotes.length,
+                            gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              mainAxisExtent: 350,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                            itemBuilder: (_, index) =>
+                                PinCard(data: dummyNotes[index]),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
