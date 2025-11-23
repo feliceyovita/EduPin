@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:edupin/services/auth/auth_service.dart';
+import 'package:provider/provider.dart';
+
 import '../widgets/logoApp_bgBlue.dart';
 import '../widgets/text_field.dart';
+import '../utils/validators.dart';
+import '../utils/snackbar_helper.dart';
+import '../provider/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,13 +17,65 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin(BuildContext context) async {
+    final authProvider = context.read<AuthProvider>();
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    final emailError = Validators.validateEmail(email);
+    if (emailError != null) {
+      SnackbarHelper.showError(context, emailError);
+      return;
+    }
+
+    final passError = Validators.validatePassword(password);
+    if (passError != null) {
+      SnackbarHelper.showError(context, passError);
+      return;
+    }
+
+    // 🔹 Proses Login
+    final success = await authProvider.signInWithEmail(
+      email: email,
+      password: password,
+    );
+
+    if (success) {
+      SnackbarHelper.showSuccess(context, 'Login berhasil!');
+      context.go('/home'); // pastikan route ada
+    } else {
+      SnackbarHelper.showError(
+        context,
+        authProvider.errorMessage ?? 'Login gagal',
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<AuthProvider>().isLoading;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxContentWidth = 400.0;
-        final double horizontalPadding = constraints.maxWidth > maxContentWidth ? (constraints.maxWidth - maxContentWidth) / 2 : constraints.maxWidth * 0.08;
-        final double effectiveWidth = constraints.maxWidth > maxContentWidth ? maxContentWidth : constraints.maxWidth;
+        final double horizontalPadding =
+        constraints.maxWidth > maxContentWidth
+            ? (constraints.maxWidth - maxContentWidth) / 2
+            : constraints.maxWidth * 0.08;
+        final double effectiveWidth =
+        constraints.maxWidth > maxContentWidth
+            ? maxContentWidth
+            : constraints.maxWidth;
         final double titleFontSize = effectiveWidth * 0.08;
         final double subtitleFontSize = effectiveWidth * 0.035;
         final double cardTitleFontSize = effectiveWidth * 0.06;
@@ -30,14 +88,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: maxContentWidth, minHeight: constraints
-                        .maxHeight,
+                    maxWidth: maxContentWidth,
+                    minHeight: constraints.maxHeight,
                   ),
                   child: IntrinsicHeight(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SizedBox(height: constraints.maxHeight * 0.1 < 60 ? 60 : constraints.maxHeight * 0.1),
+                        SizedBox(
+                          height: constraints.maxHeight * 0.1 < 60
+                              ? 60
+                              : constraints.maxHeight * 0.1,
+                        ),
                         const logoAppBgBlue(),
                         const SizedBox(height: 16),
                         Text(
@@ -51,15 +113,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Platform Berbagi Catatan Pelajaran',
-                          style: TextStyle(
-                            fontSize: subtitleFontSize,
-                          ),
+                          style: TextStyle(fontSize: subtitleFontSize),
                         ),
                         const SizedBox(height: 30),
 
                         // Card utama
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 32),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
@@ -88,41 +149,39 @@ class _LoginScreenState extends State<LoginScreen> {
                               Center(
                                 child: Text(
                                   'Masuk ke akun anda untuk melanjutkan',
-                                  style: TextStyle(
-                                    fontSize: subtitleFontSize,
-                                  ),
+                                  style: TextStyle(fontSize: subtitleFontSize),
                                 ),
                               ),
                               const SizedBox(height: 30),
 
                               // Email
-                              Text(
+                              const Text(
                                 'Email',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w500),
+                                style: TextStyle(fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 6),
-                              const textField(
+                              textField(
+                                controller: emailController,
                                 hintText: 'Masukkan email anda',
                                 prefixIcon: Icons.email_outlined,
                               ),
                               const SizedBox(height: 20),
 
                               // Password
-                              Text(
+                              const Text(
                                 'Password',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w500),
+                                style: TextStyle(fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 6),
-                              const textField(
+                              textField(
+                                controller: passwordController,
                                 hintText: 'Masukkan password anda',
                                 obscureText: true,
                                 prefixIcon: Icons.lock_outline,
                                 suffixIcon: Icons.visibility_off_outlined,
                               ),
-
                               const SizedBox(height: 10),
+
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
@@ -131,7 +190,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   },
                                   child: const Text(
                                     'Lupa Password?',
-                                    style: TextStyle(color: Color(0xFF1E88E5)),
+                                    style:
+                                    TextStyle(color: Color(0xFF1E88E5)),
                                   ),
                                 ),
                               ),
@@ -142,9 +202,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 height: 48,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    context.go('/home');
-                                  },
+                                  onPressed:
+                                  isLoading ? null : () => _handleLogin(context),
                                   style: ElevatedButton.styleFrom(
                                     padding: EdgeInsets.zero,
                                     shape: RoundedRectangleBorder(
@@ -165,8 +224,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Center(
-                                      child: Text(
+                                    child: Center(
+                                      child: isLoading
+                                          ? const CircularProgressIndicator()
+                                          : const Text(
                                         'Masuk',
                                         style: TextStyle(
                                           color: Colors.white,
@@ -182,15 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 20),
 
                               // atau
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'atau',
-                                    style: TextStyle(color: Colors.black),
-                                  ),
-                                ],
-                              ),
+                              Center(child: Text('atau')),
 
                               const SizedBox(height: 20),
 
@@ -198,10 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    'Belum punya akun? ',
-                                    style: TextStyle(color: Colors.black),
-                                  ),
+                                  const Text('Belum punya akun? '),
                                   GestureDetector(
                                     onTap: () {
                                       context.go('/signup');
@@ -219,7 +269,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                         ),
-                        SizedBox(height: constraints.maxHeight * 0.06 < 30 ? 30 : constraints.maxHeight * 0.06),
+                        SizedBox(
+                          height: constraints.maxHeight * 0.06 < 30
+                              ? 30
+                              : constraints.maxHeight * 0.06,
+                        ),
                       ],
                     ),
                   ),

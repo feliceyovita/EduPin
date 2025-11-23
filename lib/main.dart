@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
-import 'app/router.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';   // dari flutterfire configure
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+
+import 'firebase_options.dart';      // dari flutterfire configure
+import 'app/router.dart';            // konfigurasi GoRouter
+import '../provider/auth_provider.dart'; // provider untuk autentikasi
 
 void main() async {
-  // 1. Buat main async
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Inisialisasi Firebase
+  // Inisialisasi Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()), // Wajib supaya bisa login/register
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -23,16 +32,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Edupin',
-      theme: ThemeData(fontFamily: 'AlbertSans', primarySwatch: Colors.blue),
+      theme: ThemeData(
+        fontFamily: 'AlbertSans',
+        primarySwatch: Colors.blue,
+      ),
       debugShowCheckedModeBanner: false,
-      locale: const Locale('id','ID'),
-      supportedLocales: const [Locale('id','ID'), Locale('en','US')],
+      locale: const Locale('id', 'ID'),
+      supportedLocales: const [
+        Locale('id', 'ID'),
+        Locale('en', 'US'),
+      ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routerConfig: router,
+      routerConfig: router, // dari file app/router.dart
     );
   }
 }

@@ -18,7 +18,6 @@ class _PinCardState extends State<PinCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 180,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),

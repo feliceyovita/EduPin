@@ -56,13 +56,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // 🟦 Scaffold tetap dipakai, tapi padding atas DIHAPUS
         Expanded(
           child: Scaffold(
             backgroundColor: const Color(0xFFF0F5F9),
             body: MediaQuery.removePadding(
               context: context,
-              removeTop: true, // 👈 HILANGKAN JARAK ATAS
+              removeTop: true,
 
               child: Column(
                 children: [
@@ -87,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          const double minCardWidth = 180;
+                          const double minCardWidth = 200;
                           int crossAxisCount =
                           (constraints.maxWidth / minCardWidth).floor();
 
@@ -99,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             gridDelegate:
                             SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: crossAxisCount,
-                              mainAxisExtent: 350,
+                              mainAxisExtent: 370,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                             ),
