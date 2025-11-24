@@ -1,6 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../provider/auth_provider.dart';
 
 import '../widgets/profile_widgets.dart';
 import '../utils/custom_notification.dart';
@@ -617,11 +621,54 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        // --- PANGGIL FUNGSI GO ROUTER ---
-                        onPressed: () => _forceNavigateToLogin(context),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
-                        child: const Text('Hapus Akun', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: kFontFamily)),
+                        onPressed: () async {
+                          String email = emailController.text.trim();
+                          String password = passwordController.text.trim();
+
+                          if (email.isEmpty || password.isEmpty) return;
+
+                          try {
+                            User? user = FirebaseAuth.instance.currentUser;
+                            AuthCredential credential = EmailAuthProvider.credential(
+                              email: email,
+                              password: password,
+                            );
+
+                            await user!.reauthenticateWithCredential(credential);
+
+                            await FirebaseFirestore.instance.collection('users')
+                                .doc(user.uid)
+                                .delete();
+
+                            await user.delete();
+                            await FirebaseAuth.instance.signOut();
+
+                            if (context.mounted) {
+                              context.read<AuthProvider>().signOut();
+                              context.go('/login');
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Email atau password salah')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE11D48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text(
+                          'Hapus Akun',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: kFontFamily,
+                          ),
+                        ),
                       ),
+
                     ),
                   ],
                 ),

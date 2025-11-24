@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -39,6 +40,23 @@ class AuthService {
     }
   }
 
+  final _firestore = FirebaseFirestore.instance;
+
+  Future<Map<String, dynamic>?> getUserData() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return null;
+
+    final snapshot = await _firestore.collection('users').doc(uid).get();
+    return snapshot.data();
+  }
+
+  Future<void> updateUserData(Map<String, dynamic> data) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
+    await _firestore.collection('users').doc(uid).update(data);
+  }
+
   Future<UserCredential> signInWithEmail({
     required String email,
     required String password,
@@ -55,10 +73,6 @@ class AuthService {
     }
   }
 
-  Future<UserCredential> signInWithGoogle() async {
-    final credential = await _performGoogleSignIn();
-    return await _auth.signInWithCredential(credential);
-  }
 
   Future<void> sendPasswordResetEmail(String email) async {
     try {
@@ -127,6 +141,32 @@ class AuthService {
     return user;
   }
 
+  Future<void> deleteAccount({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final user = _requireUser();
+
+      // re-authenticate
+      final credential = EmailAuthProvider.credential(
+        email: email.trim(),
+        password: password.trim(),
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // hapus data firestore
+      await _firestore.collection("users").doc(user.uid).delete();
+
+      // hapus akun auth
+      await user.delete();
+    } on FirebaseAuthException catch (e) {
+      throw _handleFirebaseAuthException(e);
+    } catch (e) {
+      throw AuthException('Failed to delete account: ${e.toString()}');
+    }
+  }
+
   Future<void> _updateUserProfile(
       Future<void> Function() updateFn,
       String fieldName,
@@ -139,70 +179,6 @@ class AuthService {
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException('Failed to update $fieldName: ${e.toString()}');
-    }
-  }
-
-  Future<AuthCredential> _performGoogleSignIn() async {
-    try {
-      GoogleSignInAccount? googleUser;
-
-      if (GoogleSignIn.instance.supportsAuthenticate()) {
-        final completer = Completer<GoogleSignInAccount?>();
-        StreamSubscription<GoogleSignInAuthenticationEvent>? subscription;
-
-        subscription = GoogleSignIn.instance.authenticationEvents.listen(
-              (event) {
-            if (!completer.isCompleted) {
-              switch (event) {
-                case GoogleSignInAuthenticationEventSignIn():
-                  completer.complete(event.user);
-                  subscription?.cancel();
-                case GoogleSignInAuthenticationEventSignOut():
-                  completer.complete(null);
-                  subscription?.cancel();
-              }
-            }
-          },
-          onError: (error) {
-            if (!completer.isCompleted) {
-              completer.completeError(error);
-              subscription?.cancel();
-            }
-          },
-        );
-
-        try {
-          await GoogleSignIn.instance.authenticate();
-          googleUser = await completer.future.timeout(
-            const Duration(seconds: 30),
-          );
-        } catch (e) {
-          subscription.cancel();
-          rethrow;
-        }
-      } else {
-        throw AuthException('Google Sign-In tidak didukung pada platform ini');
-      }
-
-      if (googleUser == null) {
-        throw AuthException('Google Sign-In dibatalkan oleh user');
-      }
-
-      final googleAuth = googleUser.authentication;
-      if (googleAuth.idToken == null) {
-        throw AuthException('Gagal mendapatkan ID token dari Google');
-      }
-
-      return GoogleAuthProvider.credential(idToken: googleAuth.idToken);
-    } on GoogleSignInException catch (e) {
-      throw _handleGoogleSignInException(e);
-    } on FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    } on TimeoutException {
-      throw AuthException('Google Sign-In timeout. Silakan coba lagi.');
-    } catch (e) {
-      if (e is AuthException) rethrow;
-      throw AuthException('Google Sign-In gagal: ${e.toString()}');
     }
   }
 
@@ -259,17 +235,6 @@ class AuthService {
     // Default
       default:
         return AuthException('Error: ${e.message ?? e.code}');
-    }
-  }
-
-  AuthException _handleGoogleSignInException(GoogleSignInException e) {
-    switch (e.code) {
-      case GoogleSignInExceptionCode.canceled:
-        return AuthException('Google Sign-In dibatalkan oleh user');
-      default:
-        return AuthException(
-          'Google Sign-In error: ${e.description ?? e.code.name}',
-        );
     }
   }
 }

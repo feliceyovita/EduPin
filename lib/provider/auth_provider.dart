@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../services/auth/auth_service.dart';
-
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
 
@@ -100,10 +99,6 @@ class AuthProvider with ChangeNotifier {
         errorPrefix: 'Sign in gagal',
       );
 
-  Future<bool> signInWithGoogle() => _executeAuth(
-    _authService.signInWithGoogle,
-    errorPrefix: 'Google Sign-In gagal',
-  );
 
   Future<bool> sendPasswordResetEmail(String email) => _executeAuth(
         () => _authService.sendPasswordResetEmail(email),
@@ -140,5 +135,30 @@ class AuthProvider with ChangeNotifier {
     _authService.signOut,
     errorPrefix: 'Sign out gagal',
   );
+
+  Future<bool> deleteAccount({
+    required String email,
+    required String password,
+  }) =>
+      _executeAuth(
+            () => _authService.deleteAccount(
+          email: email,
+          password: password,
+        ),
+        errorPrefix: 'Hapus akun gagal',
+      );
+
+  Map<String, dynamic>? userData;
+
+  Future<void> loadUser() async {
+    userData = await _authService.getUserData();
+    notifyListeners();
+  }
+
+  Future<void> updateUser(Map<String, dynamic> newData) async {
+    await _authService.updateUserData(newData);
+    await loadUser();
+  }
+
 
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/logoApp_bgBlue.dart';
 import '../widgets/text_field.dart';
 
@@ -11,18 +12,17 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final TextEditingController emailController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxContentWidth = 400.0;
-
-        // Hitung padding horizontal agar konten berada di tengah pada layar lebar
         final double horizontalPadding = constraints.maxWidth > maxContentWidth
             ? (constraints.maxWidth - maxContentWidth) / 2
             : constraints.maxWidth * 0.08;
 
-        // Gunakan lebar efektif untuk perhitungan ukuran font yang adaptif
         final double effectiveWidth =
         constraints.maxWidth > maxContentWidth ? maxContentWidth : constraints.maxWidth;
 
@@ -31,13 +31,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         final double cardTitleFontSize = effectiveWidth * 0.06;
         final double labelFontSize = effectiveWidth * 0.05;
 
-        // Tinggi AppBar + Status Bar
         final double appBarHeight = MediaQuery.of(context).padding.top + kToolbarHeight;
-
 
         return Scaffold(
           backgroundColor: const Color(0xFFF4F8FD),
-          // Menggunakan AppBar kembali untuk tombol fixed
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -51,7 +48,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               highlightColor: Colors.transparent,
             ),
           ),
-          // PENTING: Memperluas body di belakang AppBar agar konten dapat digulir hingga ke atas
           extendBodyBehindAppBar: true,
 
           body: SingleChildScrollView(
@@ -60,17 +56,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: maxContentWidth, // Batasi lebar maksimum konten
-                    minHeight: constraints.maxHeight, // Biarkan konten mengisi seluruh tinggi
+                    maxWidth: maxContentWidth,
+                    minHeight: constraints.maxHeight,
                   ),
                   child: IntrinsicHeight(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // PENTING: Tambahkan padding di atas untuk memastikan konten tidak tertutup oleh AppBar yang transparan
                         SizedBox(height: appBarHeight),
 
-                        // Konten Utama
+                        // Logo & Title
                         const logoAppBgBlue(),
                         const SizedBox(height: 16),
                         Text(
@@ -91,7 +86,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Card utama
+                        // Card
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -143,10 +138,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              const textField(
+
+                              // TextField dengan controller
+                              textField(
+                                controller: emailController,
                                 hintText: 'Masukkan email terdaftar anda',
                                 prefixIcon: Icons.email_outlined,
                               ),
+
                               const SizedBox(height: 24),
                               Text(
                                 'Pastikan email yang Anda masukkan adalah email yang terdaftar di akun EduPin',
@@ -161,8 +160,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                 width: double.infinity,
                                 height: 48,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    context.go('/login');
+                                  onPressed: () async {
+                                    final email = emailController.text.trim();
+
+                                    if (email.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Email tidak boleh kosong'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    try {
+                                      await FirebaseAuth.instance
+                                          .sendPasswordResetEmail(email: email);
+
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Link reset password telah dikirim!'),
+                                        ),
+                                      );
+
+                                      context.go('/login');
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Gagal mengirim reset password: $e'),
+                                        ),
+                                      );
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     padding: EdgeInsets.zero,
@@ -170,8 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ).copyWith(
-                                    backgroundColor:
-                                    WidgetStateProperty.all(Colors.transparent),
+                                    backgroundColor: WidgetStateProperty.all(Colors.transparent),
                                     elevation: WidgetStateProperty.all(0),
                                   ),
                                   child: Ink(
