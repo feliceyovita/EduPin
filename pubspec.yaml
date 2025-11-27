@@ -45,6 +45,10 @@ dependencies:
   image_picker: ^1.2.1
   firebase_storage: ^13.0.4
   supabase_flutter: ^2.10.3
+  http: ^1.2.0                # Untuk download data gambar dari internet
+  gal: ^2.3.0 # Untuk menyimpan gambar ke galeri
+  permission_handler: ^11.3.0 # Untuk minta izin akses penyimpanan
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:

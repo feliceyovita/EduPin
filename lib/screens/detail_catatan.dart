@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:gal/gal.dart';
 
 import '../services/catatan_service.dart';
-import '../widgets/buttom_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/pill_tag.dart';
 import '../widgets/action_icon_button.dart';
@@ -12,7 +15,6 @@ import '../widgets/publisher_card.dart';
 import '../models/note_details.dart';
 
 class NoteDetailPage extends StatefulWidget {
-
   final String noteId;
   const NoteDetailPage({super.key, required this.noteId});
 
@@ -22,13 +24,24 @@ class NoteDetailPage extends StatefulWidget {
 
 class _NoteDetailPageState extends State<NoteDetailPage>
     with AutomaticKeepAliveClientMixin {
+
+  // STATUS VARIABLES
   bool pinned = false;
   bool liked = false;
+  bool _isDownloading = false; // Menandakan sedang proses download atau tidak
 
   OverlayEntry? _overlayEntry;
 
+  late Future<NoteDetail> _noteFuture;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteFuture = NotesService().getNoteById(widget.noteId);
+  }
 
   @override
   void dispose() {
@@ -36,6 +49,9 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     super.dispose();
   }
 
+  // ==========================================
+  // LOGIKA OVERLAY (TOAST CUSTOM)
+  // ==========================================
   void _removeOverlayIfAny() {
     _overlayEntry?.remove();
     _overlayEntry = null;
@@ -77,8 +93,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle_outline,
-                        color: Colors.white),
+                    const Icon(Icons.check_circle_outline, color: Colors.white),
                     const SizedBox(width: 10),
                     Flexible(
                       child: Text(
@@ -100,7 +115,73 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     Future.delayed(duration, _removeOverlayIfAny);
   }
 
-  // --------- BOTTOM SHEET SIMPAN DI PIN ANDA ----------
+  // ==========================================
+  // LOGIKA DOWNLOAD GAMBAR (VERSI GAL)
+  // ==========================================
+  Future<void> _downloadImages(List<String> imageUrls) async {
+    if (imageUrls.isEmpty) {
+      _showTopOverlay("Tidak ada gambar untuk diunduh");
+      return;
+    }
+
+    // 1. Cek Permission menggunakan Gal
+    try {
+      bool hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        await Gal.requestAccess();
+        hasAccess = await Gal.hasAccess();
+        if (!hasAccess) return; // Jika user tetap menolak, berhenti.
+      }
+    } catch (e) {
+      debugPrint("Error checking permission: $e");
+    }
+
+    setState(() => _isDownloading = true);
+
+    // Tampilkan Loading Dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+
+    int successCount = 0;
+
+    try {
+      for (var url in imageUrls) {
+        // 2. Ambil data bytes gambar dari URL
+        final response = await http.get(Uri.parse(url));
+
+        if (response.statusCode == 200) {
+          await Gal.putImageBytes(
+            Uint8List.fromList(response.bodyBytes),
+            name: "EduPin_Img_${DateTime.now().millisecondsSinceEpoch}",
+          );
+          successCount++;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error downloading: $e");
+    } finally {
+      if (mounted) {
+        Navigator.pop(context); // Tutup dialog loading
+        setState(() => _isDownloading = false);
+
+        if (successCount > 0) {
+          _showTopOverlay("Berhasil menyimpan $successCount gambar ke galeri");
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Gagal mengunduh gambar.")),
+          );
+        }
+      }
+    }
+  }
+// ==========================================
+  // BOTTOM SHEET DINAMIS (DATA REAL DARI DATABASE)
+  // ==========================================
   void _showPinSheet() {
     showModalBottomSheet(
       context: context,
@@ -110,7 +191,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         final bottomInset = MediaQuery.of(ctx).viewPadding.bottom;
 
         return Container(
-          constraints: const BoxConstraints(maxWidth: 500),
+          width: double.infinity,
           decoration: const BoxDecoration(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
@@ -120,28 +201,20 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               stops: [0.0, 0.73],
-              colors: [
-                Color(0xFF4B9CFF),
-                Color(0xFF2272FE),
-              ],
+              colors: [Color(0xFF4B9CFF), Color(0xFF2272FE)],
             ),
           ),
           padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottomInset),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // HEADER ... (sama seperti sebelumnya)
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Text(
-                    'Simpan di pin anda',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
+                  const Text('Simpan di pin anda',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: IconButton(
@@ -153,79 +226,94 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-              InkWell(
-                onTap: () {
-                  _showTopOverlay('Disimpan ke "Materi UTS"');
-                  Navigator.pop(ctx);
+              // --- BAGIAN PENTING: STREAM BUILDER ---
+              StreamBuilder<QuerySnapshot>(
+                stream: NotesService().streamKoleksi(), // Ambil daftar papan
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                  }
+
+                  final boards = snapshot.data?.docs ?? [];
+
+                  if (boards.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: Text("Belum ada koleksi. Buat baru yuk!",
+                          style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic)),
+                    );
+                  }
+
+                  // TAMPILKAN LIST PAPAN
+                  return Column(
+                    children: boards.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final namaPapan = data['name'] ?? 'Tanpa Nama'; // Ambil nama asli dari DB (misal: "belajar uts")
+
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () async {
+                            Navigator.pop(ctx); // Tutup sheet
+                            try {
+                              // --- BAGIAN KUNCI ---
+                              // Simpan pakai variabel `namaPapan` (dinamis), JANGAN tulis manual "Materi UTS"
+                              await NotesService().simpanKePin(widget.noteId, namaPapan);
+
+                              setState(() => pinned = true);
+                              _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  // Gambar ikon folder sementara
+                                  child: Container(
+                                    width: 48, height: 48, color: Colors.white24,
+                                    child: const Icon(Icons.folder, color: Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(namaPapan, // Tampilkan nama papan
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
                 },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          'assets/images/sample_note.jpeg',
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Materi UTS',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
-              const SizedBox(height: 20),
 
+              const SizedBox(height: 24),
+              // TOMBOL BUAT BARU ... (sama seperti sebelumnya)
               GestureDetector(
                 onTap: () {
                   Navigator.pop(ctx);
                   context.push('/pin_baru');
                 },
-                child: Container(
-                  color: Colors.transparent,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Color(0xFF2272FE),
-                          size: 30,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Buat koleksi baru',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56, height: 56,
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                      child: const Icon(Icons.add, color: Color(0xFF2272FE), size: 30),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Buat koleksi baru', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -236,17 +324,40 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     );
   }
 
+  // ==========================================
+  // BUILD UI UTAMA
+  // ==========================================
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
     return FutureBuilder<NoteDetail>(
-      future: NotesService().getNoteById(widget.noteId),
+      future: _noteFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        // 1. Loading State
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
+            backgroundColor: Color(0xFFEFF6FF),
             body: Center(child: CircularProgressIndicator()),
           );
+        }
+
+        // 2. Error State
+        if (snapshot.hasError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFEFF6FF),
+            appBar: AppBar(
+              backgroundColor: const Color(0xFFEFF6FF),
+              elevation: 0,
+              leading: BackButton(onPressed: () => context.pop()),
+            ),
+            body: Center(child: Text("Terjadi kesalahan: ${snapshot.error}")),
+          );
+        }
+
+        // 3. Data Ready State
+        if (!snapshot.hasData) {
+          return const Scaffold(body: Center(child: Text("Data tidak ditemukan")));
         }
 
         final d = snapshot.data!;
@@ -311,6 +422,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         // ---------- ACTION BUTTONS ----------
         final actions = Row(
           children: [
+            // TOMBOL PIN
             ActionIconButton(
               icon: Icons.push_pin_outlined,
               tooltip: pinned ? 'Lepas dari pin' : 'Simpan ke pin',
@@ -320,21 +432,26 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                 if (pinned) _showPinSheet();
               },
             ),
+            // TOMBOL DOWNLOAD (SUDAH DIPERBAIKI)
             ActionIconButton(
-              icon: Icons.download_outlined,
+              icon: _isDownloading
+                  ? Icons.hourglass_empty
+                  : Icons.download_outlined,
               tooltip: 'Download',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Download dummy — nanti diimplementasikan'),
-                ),
-              ),
+              onTap: () {
+                if (!_isDownloading) {
+                  _downloadImages(d.imageAssets);
+                }
+              },
             ),
+            // TOMBOL REPORT
             ActionIconButton(
               icon: Icons.flag_outlined,
               tooltip: 'Laporkan',
               onTap: () => context.push('/report', extra: d),
             ),
             const Spacer(),
+            // TOMBOL LIKE
             ActionIconButton(
               icon: liked ? Icons.favorite : Icons.favorite_border,
               tooltip: 'Suka',
@@ -364,7 +481,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           ],
         );
 
-
         // ---------- MAIN CARD ----------
         final mainCard = SectionCard(
           child: Column(
@@ -381,6 +497,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           ),
         );
 
+        // ---------- PUBLISHER CARD ----------
         final publisherCard = GestureDetector(
           onTap: () {
             context.push('/profile_user', extra: d.publisher);
@@ -388,6 +505,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           child: PublisherCard(p: d.publisher),
         );
 
+        // ---------- SCAFFOLD RETURN ----------
         return Scaffold(
           backgroundColor: const Color(0xFFEFF6FF),
           appBar: AppBar(
