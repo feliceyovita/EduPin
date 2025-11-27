@@ -1,12 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../services/auth/auth_service.dart';
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   User? _user;
   bool _isLoading = false;
   String? _errorMessage;
+
 
   User? get user => _user;
   bool get isLoading => _isLoading;
@@ -16,6 +19,53 @@ class AuthProvider with ChangeNotifier {
   AuthProvider() {
     _initAuthListener();
   }
+  Map<String, dynamic>? userProfile;
+
+  bool isLoadingProfile = false;
+
+  User? get currentUser => _authService.currentUser;
+
+  /// Fetch profile from Firestore
+  Future<void> loadUserProfile() async {
+    if (currentUser == null) return;
+
+    isLoadingProfile = true;
+    notifyListeners();
+
+    DocumentSnapshot doc =
+    await _firestore.collection('users').doc(currentUser!.uid).get();
+
+    if (doc.exists) {
+      userProfile = doc.data() as Map<String, dynamic>;
+    }
+
+    isLoadingProfile = false;
+    notifyListeners();
+  }
+
+  /// Save changes to Firestore
+  Future<void> updateProfile({
+    required String nama,
+    required String username,
+    required String sekolah,
+    DateTime? tanggalLahir,
+  }) async {
+    if (currentUser == null) return;
+
+    await _firestore.collection('users').doc(currentUser!.uid).update({
+      'nama': nama,
+      'username': username,
+      'sekolah': sekolah,
+      'tanggalLahir': tanggalLahir,
+    });
+
+    // update Firebase Auth display name biar sinkron
+    await currentUser!.updateDisplayName(nama);
+
+    // refresh provider
+    await loadUserProfile();
+  }
+
 
   void _initAuthListener() {
     _authService.authStateChanges.listen((User? user) {

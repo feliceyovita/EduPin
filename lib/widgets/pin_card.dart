@@ -13,7 +13,7 @@ class PinCard extends StatefulWidget {
 
 class _PinCardState extends State<PinCard> {
   bool isLiked = false;
-  int likeCount = 156; // bisa juga ambil dari note model jika ada
+  int likeCount = 156;
 
   @override
   Widget build(BuildContext context) {
@@ -28,17 +28,17 @@ class _PinCardState extends State<PinCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail
+          // Thumbnail (FROM SUPABASE URL)
           InkWell(
-            onTap: () {
-              context.push('/detail', extra: widget.data);
-            },
+            onTap: () => context.push('/detail_catatan', extra: widget.data.id),
+
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Image.asset(
-                widget.data.imageAssets.isNotEmpty
-                    ? widget.data.imageAssets[0]
-                    : "assets/images/gambar_catatan.jpg",
+              borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(
+                widget.data.imageUrl.isNotEmpty
+                    ? widget.data.imageUrl
+                    : "https://placehold.co/600x400?text=No+Image",
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
@@ -101,27 +101,25 @@ class _PinCardState extends State<PinCard> {
                 const SizedBox(height: 6),
 
                 // Tags
-                Wrap(
-                  spacing: 4,
-                  runSpacing: -4,
-                  children: widget.data.tags.map((tag) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade100),
-                      ),
-                      child: Text(
-                        "#$tag",
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.blue,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: widget.data.tags.map((tag) {
+                      return Container(
+                        margin: const EdgeInsets.only(right: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade100),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                        child: Text(
+                          "#$tag",
+                          style: const TextStyle(fontSize: 11, color: Colors.blue),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
 
                 const SizedBox(height: 10),
@@ -138,17 +136,12 @@ class _PinCardState extends State<PinCard> {
                     ),
                     const Spacer(),
 
-                    // LIKE BUTTON (TOGGLE)
+                    // LIKE BUTTON
                     InkWell(
                       onTap: () {
                         setState(() {
-                          if (isLiked) {
-                            isLiked = false;
-                            likeCount--;
-                          } else {
-                            isLiked = true;
-                            likeCount++;
-                          }
+                          isLiked = !isLiked;
+                          likeCount += isLiked ? 1 : -1;
                         });
                       },
                       child: Row(

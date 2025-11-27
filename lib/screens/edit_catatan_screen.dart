@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../models/note_details.dart';
 import '../widgets/section_card.dart';
 
 class EditCatatanScreen extends StatefulWidget {
-  const EditCatatanScreen({
-    super.key,
-  });
+  final NoteDetail note;
+  const EditCatatanScreen({super.key, required this.note});
 
   @override
   State<EditCatatanScreen> createState() => _EditCatatanScreenState();
@@ -58,19 +58,19 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulasi data yang sudah ada
-    _titleC.text = 'Rumus Integral dan Diferensial';
-    _descC.text =
-    'Catatan lengkap bab integral dan diferensial untuk kalkulus 1.';
-    _schoolC.text = 'Universitas Sumatera Utara';
-    _selectedSubject = 'Matematika dan Komputasi';
-    _selectedGrade = 'Kuliah';
-    _tags.addAll(['kalkulus', 'matematika', 'semester 1']);
-    _hasImage = true;
-    _publikasi = true;
-    _izinkanUnduh = false;
 
-    // Listener untuk validasi tombol
+    final note = widget.note;
+
+    _titleC.text = note.title;
+    _descC.text = note.description;
+    _schoolC.text = note.school ?? "";
+    _selectedSubject = note.subject;
+    _selectedGrade = note.grade;
+    _tags.addAll(note.tags);
+    _hasImage = note.imageAssets.isNotEmpty;
+    _publikasi = note.publikasi;
+    _izinkanUnduh = note.izinkanUnduh;
+
     _titleC.addListener(_onFormChange);
     _descC.addListener(_onFormChange);
     _schoolC.addListener(_onFormChange);

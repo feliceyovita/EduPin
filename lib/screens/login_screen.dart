@@ -19,7 +19,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
+  bool isPasswordVisible = false;
   @override
   void dispose() {
     emailController.dispose();
@@ -155,30 +155,64 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 30),
 
                               // Email
+                              // Email
                               const Text(
                                 'Email',
                                 style: TextStyle(fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 6),
-                              textField(
+                              TextField(
                                 controller: emailController,
-                                hintText: 'Masukkan email anda',
-                                prefixIcon: Icons.email_outlined,
+                                decoration: InputDecoration(
+                                  hintText: 'Masukkan email anda',
+                                  prefixIcon: const Icon(Icons.email_outlined),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade100, // samain
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.blue.shade400),
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 20),
 
-                              // Password
+// Password
                               const Text(
                                 'Password',
                                 style: TextStyle(fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 6),
-                              textField(
+                              TextField(
                                 controller: passwordController,
-                                hintText: 'Masukkan password anda',
-                                obscureText: true,
-                                prefixIcon: Icons.lock_outline,
-                                suffixIcon: Icons.visibility_off_outlined,
+                                obscureText: !isPasswordVisible,
+                                decoration: InputDecoration(
+                                  hintText: 'Masukkan password anda',
+                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        isPasswordVisible = !isPasswordVisible;
+                                      });
+                                    },
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade100, // samain
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.blue.shade400),
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 10),
 

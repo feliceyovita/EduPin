@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../models/note_details.dart';
 import '../provider/auth_provider.dart';
 
 import '../widgets/profile_widgets.dart';
@@ -32,6 +33,8 @@ class ProfileAboutView extends StatelessWidget {
     String formatTanggal(dynamic tanggal) {
       if (tanggal is DateTime) {
         return DateFormat('d MMMM yyyy').format(tanggal);
+      } else if (tanggal is Timestamp) {
+        return DateFormat('d MMMM yyyy').format(tanggal.toDate());
       }
       return '-';
     }
@@ -81,7 +84,6 @@ class ProfileAboutView extends StatelessWidget {
             ],
           ),
           const Divider(height: 30),
-
           ProfileInfoRow(
             iconWidget: Image.asset('assets/images/mail.png',
                 width: iconSize, height: iconSize, color: iconColor),
@@ -97,20 +99,47 @@ class ProfileAboutView extends StatelessWidget {
           ProfileInfoRow(
             iconWidget: Image.asset('assets/images/univ.png',
                 width: iconSize, height: iconSize, color: iconColor),
-            text: userData['institusi'] ?? '-',
+            text: userData['sekolah'] ?? '-',
           ),
           const SizedBox(height: 18),
           ProfileInfoRow(
             iconWidget: Image.asset('assets/images/people.png',
                 width: iconSize, height: iconSize, color: iconColor),
-            text: userData['bergabung'] ?? '-',
+            text: formatTanggal(userData['createdAt']),
           ),
+
         ],
       ),
     );
   }
 }
 
+class ProfileInfoRow extends StatelessWidget {
+  final Widget iconWidget;
+  final String text;
+
+  const ProfileInfoRow({super.key, required this.iconWidget, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        iconWidget,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF333333),
+              fontFamily: kFontFamily,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 // ==================================================
 // 2. TAMPILAN TAB TENTANG (MODE EDIT)
 // ==================================================
@@ -138,28 +167,87 @@ class ProfileEditForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Informasi Personal',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF333333),
-                fontFamily: kFontFamily,
-              )),
+          const Text(
+            'Informasi Personal',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF333333),
+              fontFamily: kFontFamily,
+            ),
+          ),
           const Divider(height: 30),
           ProfileTextField(controller: namaController, label: 'Nama Lengkap'),
           const SizedBox(height: 15),
           ProfileTextField(controller: usernameController, label: 'Username'),
           const SizedBox(height: 15),
           ProfileTextField(
-              controller: tanggalLahirController,
-              label: 'Tanggal Lahir',
-              readOnly: true,
-              onTap: onDateTap,
-              suffixIcon: const Icon(Icons.calendar_today_outlined)),
+            controller: tanggalLahirController,
+            label: 'Tanggal Lahir',
+            readOnly: true,
+            onTap: onDateTap,
+            suffixIcon: const Icon(Icons.calendar_today_outlined),
+          ),
           const SizedBox(height: 15),
           ProfileTextField(controller: institusiController, label: 'Institusi'),
         ],
       ),
+    );
+  }
+}
+
+class ProfileTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
+
+  const ProfileTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+            fontFamily: kFontFamily,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          readOnly: readOnly,
+          onTap: onTap,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 10,
+              horizontal: 16,
+            ),
+            suffixIcon: suffixIcon,
+          ),
+          style: const TextStyle(
+            fontFamily: kFontFamily,
+            fontSize: 14,
+            color: Color(0xFF333333),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -177,23 +265,6 @@ class ProfileNotesTab extends StatefulWidget {
 class _ProfileNotesTabState extends State<ProfileNotesTab> {
   bool _isEditingNotes = false;
 
-  final List<Map<String, dynamic>> _notes = [
-    {
-      "title": "Integral Parsial dan Contoh Soal",
-      "category": "Matematika",
-      "pinCount": 23,
-      "date": "20/09/2025",
-      "image": "assets/images/integral.png"
-    },
-    {
-      "title": "Struktur Data Stack dan Queue",
-      "category": "Informatika",
-      "pinCount": 18,
-      "date": "20/09/2025",
-      "image": "assets/images/strukdat.png"
-    },
-  ];
-
   void _toggleEdit() {
     setState(() {
       _isEditingNotes = !_isEditingNotes;
@@ -203,11 +274,18 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
     }
   }
 
+  String formatTanggal(dynamic tanggal) {
+    if (tanggal is Timestamp) return DateFormat('dd/MM/yyyy').format(tanggal.toDate());
+    if (tanggal is DateTime) return DateFormat('dd/MM/yyyy').format(tanggal);
+    if (tanggal is String) return tanggal;
+    return '-';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           Row(
@@ -245,39 +323,69 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                       ? const Color(0xFF00C853)
                       : const Color(0xFF2782FF),
                   shape: const StadiumBorder(),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   elevation: 2,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 20),
 
-          _notes.isEmpty
-              ? Container(
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/edit_whole.png',
-                    width: 50, height: 50, color: Colors.grey.shade300),
-                const SizedBox(height: 10),
-                const Text('Belum ada catatan',
-                    style: TextStyle(
-                        color: Colors.grey, fontFamily: kFontFamily)),
-              ],
-            ),
-          )
-              : ListView.separated(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _notes.length,
-            separatorBuilder: (context, index) =>
-            const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final note = _notes[index];
-              return _buildNoteCard(note, context);
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('notes').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/images/edit_whole.png',
+                          width: 50, height: 50, color: Colors.grey.shade300),
+                      const SizedBox(height: 10),
+                      const Text('Belum ada catatan',
+                          style: TextStyle(
+                              color: Colors.grey, fontFamily: kFontFamily)),
+                    ],
+                  ),
+                );
+              }
+
+              final notes = snapshot.data!.docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return {
+                  "docId": doc.id,
+                  "title": data['title'] ?? 'Tanpa Judul',
+                  "description": data['description'] ?? '',
+                  "grade": data['grade'] ?? '',
+                  "category": data['subject'] ?? 'Umum',
+                  "pinCount": data['pinCount'] ?? 0,
+                  "date": formatTanggal(data['createdAt']),
+                  "authorId": data['authorId'] ?? '',
+                  "imageAssets": data['imageAssets'] ?? [],
+                  "imageUrl": data['imageUrl'] ?? '',
+                  "izinkanUnduh": data['izinkanUnduh'] ?? false,
+                  "publikasi": data['publikasi'] ?? false,
+                  "publisher": data['publisher'] ?? {},
+                  "tags": data['tags'] ?? [],
+                };
+              }).toList();
+
+              return ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: notes.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final note = notes[index];
+                  return _buildNoteCard(note, context);
+                },
+              );
             },
           ),
         ],
@@ -286,6 +394,25 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
   }
 
   Widget _buildNoteCard(Map<String, dynamic> note, BuildContext context) {
+    final image = note['imageAssets'].isNotEmpty
+        ? NetworkImage(note['imageAssets'][0])
+        : AssetImage('assets/images/default_note.png') as ImageProvider;
+
+    final noteDetailObject = NoteDetail(
+      id: note['docId'] ?? '',
+      title: note['title'] ?? 'Tanpa Judul',
+      description: note['description'] ?? '',
+      subject: note['category'] ?? 'Umum',
+      grade: note['grade'] ?? '',
+      school: note['school'] ?? '',
+      tags: List<String>.from(note['tags'] ?? []),
+      imageUrl: note['imageUrl'] ?? '',
+      authorId: note['authorId'] ?? '',
+      publisher: Publisher.fromMap(note['publisher'] ?? {}),
+      imageAssets: List<String>.from(note['imageAssets'] ?? []),
+      publikasi: note['publikasi'] ?? true,
+      izinkanUnduh: note['izinkanUnduh'] ?? true,
+    );
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -309,11 +436,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: Colors.grey.shade200,
-              image: DecorationImage(
-                image: AssetImage(note['image'] ?? ''),
-                fit: BoxFit.cover,
-                onError: (exception, stackTrace) {},
-              ),
+              image: DecorationImage(image: image, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(width: 16),
@@ -345,30 +468,22 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Image.asset(
-                      'assets/images/pin.png',
-                      width: 14,
-                      height: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    Image.asset('assets/images/pin.png',
+                        width: 14, height: 14, color: Colors.grey.shade600),
                     const SizedBox(width: 4),
-                    Text(
-                      '${note['pinCount'] ?? 0}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                        fontFamily: kFontFamily,
-                      ),
-                    ),
+                    Text('${note['pinCount'] ?? 0}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          fontFamily: kFontFamily,
+                        )),
                     const Spacer(),
-                    Text(
-                      note['date'] ?? '-',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
-                        fontFamily: kFontFamily,
-                      ),
-                    ),
+                    Text(note['date'] ?? '-',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade400,
+                          fontFamily: kFontFamily,
+                        )),
                   ],
                 ),
                 if (_isEditingNotes) ...[
@@ -377,21 +492,21 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       OutlinedButton.icon(
-                        // --- EDIT CATATAN PAKAI GO ROUTER ---
                         onPressed: () {
-                          context.push('/edit_catatan');
+                          context.push('/edit_catatan', extra: noteDetailObject);
                         },
                         icon: Image.asset('assets/images/edit_2.png',
                             width: 12, height: 12, color: const Color(0xFF2782FF)),
                         label: const Text('Edit',
-                            style: TextStyle(fontFamily: kFontFamily, fontWeight: FontWeight.bold, fontSize: 12)),
+                            style: TextStyle(
+                                fontFamily: kFontFamily,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12)),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: const Color(0xFFE8F1FF),
                           foregroundColor: const Color(0xFF2782FF),
-                          side: const BorderSide(
-                              color: Color(0xFF2782FF), width: 1),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 4),
+                          side: const BorderSide(color: Color(0xFF2782FF), width: 1),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                           minimumSize: const Size(0, 30),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: const StadiumBorder(),
@@ -399,17 +514,21 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                       ),
                       const SizedBox(width: 10),
                       OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await FirebaseFirestore.instance.collection('notes').doc(note['docId']).delete();
+                        },
                         icon: Image.asset('assets/images/delete.png',
                             width: 12, height: 12, color: Colors.red),
                         label: const Text('Hapus',
-                            style: TextStyle(fontFamily: kFontFamily, fontWeight: FontWeight.bold, fontSize: 12)),
+                            style: TextStyle(
+                                fontFamily: kFontFamily,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12)),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFEBEB),
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red, width: 1),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                           minimumSize: const Size(0, 30),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: const StadiumBorder(),
@@ -425,7 +544,15 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
       ),
     );
   }
+
+  void showTopOverlay(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.green,
+    ));
+  }
 }
+
 
 // ==================================================
 // 4. TAMPILAN TAB PENGATURAN
@@ -440,18 +567,10 @@ class ProfileSettingsTab extends StatefulWidget {
 class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
   bool _notificationsEnabled = true;
 
-  // --- NAVIGASI PAKAI GO ROUTER (ANTI CRASH) ---
   void _forceNavigateToLogin(BuildContext context) {
-    // 1. Tutup Dialog (pake context.pop dari GoRouter atau Navigator.pop)
     Navigator.of(context).pop();
-
-    // 2. Langsung Pindah ke Login
-    // context.go() akan membersihkan stack dan menjadikan /login halaman utama
-    // Ini mencegah error navigtor locked.
     Future.delayed(Duration.zero, () {
-      if (context.mounted) {
-        context.go('/login');
-      }
+      if (context.mounted) context.go('/login');
     });
   }
 
@@ -470,26 +589,41 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
-                  child: Image.asset('assets/images/logout__red.png', width: 24, height: 24, color: const Color(0xFFEF4444)),
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+                  child: Image.asset('assets/images/logout__red.png',
+                      width: 24, height: 24, color: const Color(0xFFEF4444)),
                 ),
                 const SizedBox(height: 16),
-                const Text('Keluar dari akun?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily)),
+                const Text('Keluar dari akun?',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                        fontFamily: kFontFamily)),
                 const SizedBox(height: 6),
-                const Text('Sesi akan berakhir', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: kFontFamily)),
+                const Text('Sesi akan berakhir',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 13, color: Colors.grey, fontFamily: kFontFamily)),
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    // --- PANGGIL FUNGSI GO ROUTER ---
                     onPressed: () => _forceNavigateToLogin(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE11D48), elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: const Color(0xFFE11D48),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: const Text('Keluar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, fontFamily: kFontFamily)),
+                    child: const Text('Keluar',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: kFontFamily)),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -499,10 +633,16 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: const Text('Batal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151), fontFamily: kFontFamily)),
+                    child: const Text('Batal',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
+                            fontFamily: kFontFamily)),
                   ),
                 ),
               ],
@@ -528,30 +668,52 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
-                  child: Image.asset('assets/images/alert__triangle.png', width: 24, height: 24, color: const Color(0xFFEF4444)),
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+                  child: Image.asset('assets/images/alert__triangle.png',
+                      width: 24, height: 24, color: const Color(0xFFEF4444)),
                 ),
                 const SizedBox(height: 16),
-                const Text('Apakah Anda yakin ingin menghapus akun?', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily, height: 1.3)),
+                const Text(
+                  'Apakah Anda yakin ingin menghapus akun?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF333333),
+                      fontFamily: kFontFamily,
+                      height: 1.3),
+                ),
                 const SizedBox(height: 6),
-                const Text('Data akun ini akan hilang dan tidak bisa dipulihkan.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: kFontFamily)),
+                const Text(
+                  'Data akun ini akan hilang dan tidak bisa dipulihkan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 13, color: Colors.grey, fontFamily: kFontFamily),
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      // Jeda sedikit sebelum buka dialog password
                       Future.delayed(Duration.zero, () {
                         if (context.mounted) _showPasswordConfirmationDialog(context);
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE11D48), elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: const Color(0xFFE11D48),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: const Text('Konfirmasi Hapus Akun', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, fontFamily: kFontFamily)),
+                    child: const Text('Konfirmasi Hapus Akun',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: kFontFamily)),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -561,10 +723,16 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: const Text('Batal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151), fontFamily: kFontFamily)),
+                    child: const Text('Batal',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
+                            fontFamily: kFontFamily)),
                   ),
                 ),
               ],
@@ -583,99 +751,130 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              backgroundColor: Colors.white,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(child: Text('Konfirmasi Hapus Akun', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily))),
-                    const Divider(height: 20),
-                    Text('Email', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade700, fontFamily: kFontFamily)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: emailController,
-                      decoration: InputDecoration(hintText: 'Masukkan email anda', hintStyle: const TextStyle(fontSize: 13), prefixIcon: const Icon(Icons.mail_outline, color: Colors.grey, size: 20), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16)),
-                      keyboardType: TextInputType.emailAddress, style: const TextStyle(fontFamily: kFontFamily, fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Password', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade700, fontFamily: kFontFamily)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: !isPasswordVisible,
-                      decoration: InputDecoration(
-                        hintText: 'Masukkan password anda', hintStyle: const TextStyle(fontSize: 13), prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey, size: 20),
-                        suffixIcon: IconButton(icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey, size: 20), onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                      ),
-                      style: const TextStyle(fontFamily: kFontFamily, fontSize: 14),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          String email = emailController.text.trim();
-                          String password = passwordController.text.trim();
-
-                          if (email.isEmpty || password.isEmpty) return;
-
-                          try {
-                            User? user = FirebaseAuth.instance.currentUser;
-                            AuthCredential credential = EmailAuthProvider.credential(
-                              email: email,
-                              password: password,
-                            );
-
-                            await user!.reauthenticateWithCredential(credential);
-
-                            await FirebaseFirestore.instance.collection('users')
-                                .doc(user.uid)
-                                .delete();
-
-                            await user.delete();
-                            await FirebaseAuth.instance.signOut();
-
-                            if (context.mounted) {
-                              context.read<AuthProvider>().signOut();
-                              context.go('/login');
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Email atau password salah')),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE11D48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text(
-                          'Hapus Akun',
+        return StatefulBuilder(builder: (context, setState) {
+          return Dialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: Colors.white,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                      child: Text('Konfirmasi Hapus Akun',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: kFontFamily,
-                          ),
-                        ),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF333333),
+                              fontFamily: kFontFamily))),
+                  const Divider(height: 20),
+                  Text('Email',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade700,
+                          fontFamily: kFontFamily)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                        hintText: 'Masukkan email anda',
+                        hintStyle: const TextStyle(fontSize: 13),
+                        prefixIcon:
+                        const Icon(Icons.mail_outline, color: Colors.grey, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding:
+                        const EdgeInsets.symmetric(vertical: 10, horizontal: 16)),
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(fontFamily: kFontFamily, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Password',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade700,
+                          fontFamily: kFontFamily)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: !isPasswordVisible,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan password anda',
+                      hintStyle: const TextStyle(fontSize: 13),
+                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                            isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey,
+                            size: 20),
+                        onPressed: () =>
+                            setState(() => isPasswordVisible = !isPasswordVisible),
                       ),
-
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                     ),
-                  ],
-                ),
+                    style: const TextStyle(fontFamily: kFontFamily, fontSize: 14),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        String email = emailController.text.trim();
+                        String password = passwordController.text.trim();
+
+                        if (email.isEmpty || password.isEmpty) return;
+
+                        try {
+                          User? user = FirebaseAuth.instance.currentUser;
+                          AuthCredential credential = EmailAuthProvider.credential(
+                            email: email,
+                            password: password,
+                          );
+
+                          await user!.reauthenticateWithCredential(credential);
+
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .delete();
+
+                          await user.delete();
+                          await FirebaseAuth.instance.signOut();
+
+                          if (context.mounted) {
+                            context.read<AuthProvider>().signOut();
+                            context.go('/login');
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Email atau password salah')),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE11D48),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Hapus Akun',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: kFontFamily)),
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
-        );
+            ),
+          );
+        });
       },
     );
   }
@@ -690,23 +889,54 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
           children: [
             Container(
               padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ]),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Pengaturan Akun', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333), fontFamily: kFontFamily)),
+                  const Text('Pengaturan Akun',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                          fontFamily: kFontFamily)),
                   const Divider(height: 30),
                   Row(
                     children: [
-                      Image.asset('assets/images/notification.png', width: 24, height: 24, color: Colors.grey.shade700),
+                      Image.asset('assets/images/notification.png',
+                          width: 24, height: 24, color: Colors.grey.shade700),
                       const SizedBox(width: 15),
                       const Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Notifikasi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF333333), fontFamily: kFontFamily)),
-                          Text('Terima notifikasi untuk aktivitas baru', style: TextStyle(fontSize: 13, color: Colors.grey, fontFamily: kFontFamily), overflow: TextOverflow.ellipsis),
-                        ]),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Notifikasi',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF333333),
+                                    fontFamily: kFontFamily)),
+                            Text('Terima notifikasi untuk aktivitas baru',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey,
+                                    fontFamily: kFontFamily),
+                                overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
                       ),
-                      Switch(value: _notificationsEnabled, onChanged: (val) => setState(() => _notificationsEnabled = val), activeColor: const Color(0xFF2782FF)),
+                      Switch(
+                          value: _notificationsEnabled,
+                          onChanged: (val) =>
+                              setState(() => _notificationsEnabled = val),
+                          activeColor: const Color(0xFF2782FF)),
                     ],
                   ),
                 ],
@@ -715,19 +945,44 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFFFE5E5), width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFE5E5), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ]),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Zona Berbahaya', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFE11D48), fontFamily: kFontFamily)),
+                  const Text('Zona Berbahaya',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFE11D48),
+                          fontFamily: kFontFamily)),
                   const SizedBox(height: 15),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => _showDeleteConfirmationDialog(context),
-                      icon: Image.asset('assets/images/delete.png', width: 18, height: 18, color: Colors.red),
-                      label: const Text('Hapus Akun', style: TextStyle(fontFamily: kFontFamily, fontWeight: FontWeight.bold, fontSize: 15)),
-                      style: OutlinedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red, side: const BorderSide(color: Color(0xFFFFE5E5), width: 1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
+                      icon: Image.asset('assets/images/delete.png',
+                          width: 18, height: 18, color: Colors.red),
+                      label: const Text('Hapus Akun',
+                          style: TextStyle(
+                              fontFamily: kFontFamily,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
+                      style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Color(0xFFFFE5E5), width: 1),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12)),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -735,9 +990,20 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () => _showLogoutConfirmationDialog(context),
-                      icon: Image.asset('assets/images/logout_white.png', width: 18, height: 18),
-                      label: const Text('Keluar dari Akun', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: kFontFamily)),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 12)),
+                      icon: Image.asset('assets/images/logout_white.png',
+                          width: 18, height: 18),
+                      label: const Text('Keluar dari Akun',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: kFontFamily)),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12)),
                     ),
                   ),
                 ],

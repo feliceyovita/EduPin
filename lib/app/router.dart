@@ -98,8 +98,9 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/edit_catatan',
-      builder: (context, state) => const EditCatatanScreen(),
+      builder: (context, state) {final note = state.extra as NoteDetail;return EditCatatanScreen(note: note);},
     ),
+
     GoRoute(
       path: '/pin_baru',
       builder: (context, state) => const PinBaruScreen(),
@@ -109,26 +110,14 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const UploadCatatanScreen(),
     ),
     GoRoute(
-      path: '/detail',
+      path: '/detail_catatan',
       builder: (context, state) {
-        final dummy = NoteDetail(
-          id: 'd1',
-          title: 'Rumus Integral dan Diferensial',
-          subject: 'Matematika',
-          grade: 'Kelas 12',
-          tags: ['kalkulus', 'Integral', 'ParsialII', 'MTKez'],
-          description: 'Catatan lengkap…',
-          imageAssets: ['assets/images/sample_note.jpeg'],
-          publisher: const Publisher(
-            name: 'Just Kidding Rowling',
-            handle: '@jkrowling',
-            institution: 'Universitas Indonesia',
-            avatarAsset: 'assets/images/sample_note.jpeg',
-          ),
-        );
-        return NoteDetailPage(data: dummy);
+        final noteId = state.extra as String;
+        return NoteDetailPage(noteId: noteId);
       },
     ),
+
+
     GoRoute(
       path: '/report',
       builder: (context, state) =>

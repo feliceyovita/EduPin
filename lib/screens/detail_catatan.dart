@@ -1,7 +1,7 @@
-// lib/screens/detail_catatan.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../services/catatan_service.dart';
 import '../widgets/buttom_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/pill_tag.dart';
@@ -12,8 +12,9 @@ import '../widgets/publisher_card.dart';
 import '../models/note_details.dart';
 
 class NoteDetailPage extends StatefulWidget {
-  final NoteDetail data;
-  const NoteDetailPage({super.key, required this.data});
+
+  final String noteId;
+  const NoteDetailPage({super.key, required this.noteId});
 
   @override
   State<NoteDetailPage> createState() => _NoteDetailPageState();
@@ -76,9 +77,10 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.white),
+                    const Icon(Icons.check_circle_outline,
+                        color: Colors.white),
                     const SizedBox(width: 10),
-                    Flexible( // <-- Gunakan Flexible
+                    Flexible(
                       child: Text(
                         message,
                         style: const TextStyle(
@@ -94,8 +96,8 @@ class _NoteDetailPageState extends State<NoteDetailPage>
       },
     );
 
-    overlay.insert(_overlayEntry!); // Tampilkan
-    Future.delayed(duration, _removeOverlayIfAny); // Hilangkan otomatis
+    overlay.insert(_overlayEntry!);
+    Future.delayed(duration, _removeOverlayIfAny);
   }
 
   // --------- BOTTOM SHEET SIMPAN DI PIN ANDA ----------
@@ -108,9 +110,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         final bottomInset = MediaQuery.of(ctx).viewPadding.bottom;
 
         return Container(
-          constraints: const BoxConstraints(
-            maxWidth: 500,
-          ),
+          constraints: const BoxConstraints(maxWidth: 500),
           decoration: const BoxDecoration(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
@@ -119,7 +119,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              stops: [0.0, 0.73], // Sesuai Figma
+              stops: [0.0, 0.73],
               colors: [
                 Color(0xFF4B9CFF),
                 Color(0xFF2272FE),
@@ -192,11 +192,10 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               ),
               const SizedBox(height: 20),
 
-              // Tombol Buat Koleksi Baru
               GestureDetector(
                 onTap: () {
-                  Navigator.pop(ctx); // Tutup bottom sheet
-                  context.push('/pin_baru'); // Buka halaman baru
+                  Navigator.pop(ctx);
+                  context.push('/pin_baru');
                 },
                 child: Container(
                   color: Colors.transparent,
@@ -240,187 +239,202 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final d = widget.data;
 
-    final size = MediaQuery.sizeOf(context);
-    final pagePad =
-    EdgeInsets.symmetric(horizontal: size.width * 0.06, vertical: 12);
+    return FutureBuilder<NoteDetail>(
+      future: NotesService().getNoteById(widget.noteId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    // ---------- HEADER ----------
-    final header = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
+        final d = snapshot.data!;
+        final size = MediaQuery.sizeOf(context);
+
+        final pagePad = EdgeInsets.symmetric(
+          horizontal: size.width * 0.06,
+          vertical: 12,
+        );
+
+        // ---------- HEADER ----------
+        final header = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    d.title,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF3FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          d.grade,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5F2FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          d.subject,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        // ---------- ACTION BUTTONS ----------
+        final actions = Row(
+          children: [
+            ActionIconButton(
+              icon: Icons.push_pin_outlined,
+              tooltip: pinned ? 'Lepas dari pin' : 'Simpan ke pin',
+              toggled: pinned,
+              onTap: () {
+                setState(() => pinned = !pinned);
+                if (pinned) _showPinSheet();
+              },
+            ),
+            ActionIconButton(
+              icon: Icons.download_outlined,
+              tooltip: 'Download',
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Download dummy — nanti diimplementasikan'),
+                ),
+              ),
+            ),
+            ActionIconButton(
+              icon: Icons.flag_outlined,
+              tooltip: 'Laporkan',
+              onTap: () => context.push('/report', extra: d),
+            ),
+            const Spacer(),
+            ActionIconButton(
+              icon: liked ? Icons.favorite : Icons.favorite_border,
+              tooltip: 'Suka',
+              toggled: liked,
+              onTap: () => setState(() => liked = !liked),
+            ),
+          ],
+        );
+
+        // ---------- DESCRIPTION ----------
+        final description = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Deskripsi',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(d.description),
+            const SizedBox(height: 10),
+            const Text('Tags',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: d.tags.map((t) => PillTag(t)).toList(),
+            ),
+          ],
+        );
+
+
+        // ---------- MAIN CARD ----------
+        final mainCard = SectionCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                d.title,
-                style:
-                const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF3FF),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      d.grade,
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5F2FF),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      d.subject,
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
+              header,
+              const SizedBox(height: 12),
+              ImageCarousel(assets: d.imageAssets),
+              const SizedBox(height: 8),
+              actions,
+              const Divider(height: 24),
+              description,
             ],
           ),
-        ),
-      ],
-    );
+        );
 
-    final actions = Row(
-      children: [
-        ActionIconButton(
-          icon: Icons.push_pin_outlined,
-          tooltip: pinned ? 'Lepas dari pin' : 'Simpan ke pin',
-          toggled: pinned,
+        final publisherCard = GestureDetector(
           onTap: () {
-            setState(() => pinned = !pinned);
-            if (pinned) {
-              showPinSheet(context);
-            }
+            context.push('/profile_user', extra: d.publisher);
           },
-        ),
-        ActionIconButton(
-          icon: Icons.download_outlined,
-          tooltip: 'Download',
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Download dummy — nanti diimplementasikan'),
+          child: PublisherCard(p: d.publisher),
+        );
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFEFF6FF),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFFEFF6FF),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            surfaceTintColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            leading: BackButton(
+              onPressed: () => Navigator.of(context).maybePop(),
             ),
           ),
-        ),
-        ActionIconButton(
-          icon: Icons.flag_outlined,
-          tooltip: 'Laporkan',
-          onTap: () => context.push('/report', extra: d),
-        ),
-        const Spacer(),
-        ActionIconButton(
-          icon: liked ? Icons.favorite : Icons.favorite_border,
-          tooltip: 'Suka',
-          toggled: liked,
-          onTap: () => setState(() => liked = !liked),
-        ),
-      ],
-    );
+          body: SafeArea(
+            child: Padding(
+              padding: pagePad,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 700;
 
-    // ---------- DESCRIPTION ----------
-    final description = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Deskripsi', style: TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 6),
-        Text(d.description),
-        const SizedBox(height: 10),
-        const Text('Tags', style: TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: d.tags.map((t) => PillTag(t)).toList(),
-        ),
-      ],
-    );
+                  if (wide) {
+                    return SingleChildScrollView(
+                      clipBehavior: Clip.none,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 7, child: mainCard),
+                          const SizedBox(width: 16),
+                          Expanded(flex: 5, child: publisherCard),
+                        ],
+                      ),
+                    );
+                  }
 
-    // ---------- MAIN CARD ----------
-    final mainCard = SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          header,
-          const SizedBox(height: 12),
-          ImageCarousel(assets: d.imageAssets),
-          const SizedBox(height: 8),
-          actions,
-          const Divider(height: 24),
-          description,
-        ],
-      ),
-    );
-
-// ---------- PUBLISHER CARD ----------
-    final publisherCard = GestureDetector(
-      onTap: () {
-        context.push('/profile_user', extra: d.publisher);
-      },
-      child: PublisherCard(p: d.publisher),
-    );
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFEFF6FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFEFF6FF),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        leading: BackButton(
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: pagePad,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 700;
-
-              if (wide) {
-                return SingleChildScrollView(
-                  clipBehavior: Clip.none,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  return ListView(
+                    clipBehavior: Clip.none,
                     children: [
-                      Expanded(flex: 7, child: mainCard),
-                      const SizedBox(width: 16),
-                      Expanded(flex: 5, child: publisherCard),
+                      mainCard,
+                      const SizedBox(height: 12),
+                      publisherCard,
                     ],
-                  ),
-                );
-              }
-
-              return ListView(
-                clipBehavior: Clip.none,
-                children: [
-                  mainCard,
-                  const SizedBox(height: 12),
-                  publisherCard,
-                ],
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

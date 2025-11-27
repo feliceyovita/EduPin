@@ -28,7 +28,30 @@ class _ImageCarouselState extends State<ImageCarousel> {
               controller: controller,
               onPageChanged: (i) => setState(() => index = i),
               itemCount: widget.assets.length,
-              itemBuilder: (_, i) => Image.asset(widget.assets[i], fit: BoxFit.cover),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          color: Colors.black,
+                          alignment: Alignment.center,
+                          child: InteractiveViewer(
+                            maxScale: 5,
+                            child: Image.network(widget.assets[i]),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Image.network(
+                    widget.assets[i],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.broken_image),
+                  ),
+                ),
             ),
           ),
         ),
