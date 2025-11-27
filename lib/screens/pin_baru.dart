@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import '../widgets/section_card.dart'; // Tidak dipakai
+import '../services/catatan_service.dart'; // Import service untuk simpan ke database
 
 class PinBaruScreen extends StatefulWidget {
   const PinBaruScreen({super.key});
@@ -12,8 +12,8 @@ class PinBaruScreen extends StatefulWidget {
 class _PinBaruScreenState extends State<PinBaruScreen> {
   final _titleC = TextEditingController();
   bool _isFormValid = false;
+  bool _isLoading = false; // Variabel untuk status loading
 
-  // 1. Tambahkan variabel ini untuk melacak overlay
   OverlayEntry? _overlayEntry;
 
   @override
@@ -29,40 +29,54 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
   @override
   void dispose() {
     _titleC.dispose();
-    _removeOverlayIfAny(); // Hapus overlay jika pindah halaman
+    _removeOverlayIfAny();
     super.dispose();
   }
 
-  void _onSimpan() {
+  // ======================================================
+  // FUNGSI SIMPAN KE DATABASE (SUDAH DIPERBAIKI)
+  // ======================================================
+  Future<void> _onSimpan() async {
     final title = _titleC.text.trim();
+    if (title.isEmpty) return;
 
-    // ======================================================
-    // 2. PANGGIL FUNGSI OVERLAY DI SINI
-    // ======================================================
-    _showTopOverlay('Koleksi "$title" berhasil dibuat');
+    // 1. Mulai Loading
+    setState(() => _isLoading = true);
 
-    // Beri jeda agar user sempat baca, baru kembali
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      // 2. Panggil Service Firebase
+      await NotesService().buatPapanBaru(title);
+
+      // 3. Jika Sukses, Tampilkan Overlay
       if (mounted) {
-        context.pop(); // Kembali ke halaman detail
-      }
-    });
+        _showTopOverlay('Koleksi "$title" berhasil dibuat');
 
-    // Hapus SnackBar lama jika Anda masih menggunakannya
-    // ScaffoldMessenger.of(context).showSnackBar(...);
+        // Beri jeda 1.5 detik agar user sempat baca notifikasi, lalu kembali
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted) {
+            context.pop(); // Kembali ke halaman sebelumnya
+          }
+        });
+      }
+    } catch (e) {
+      // 4. Jika Gagal
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal membuat papan: $e")),
+        );
+        setState(() => _isLoading = false); // Matikan loading biar bisa coba lagi
+      }
+    }
   }
 
   // ======================================================
-  // 3. FUNGSI HELPER UNTUK MENGHAPUS OVERLAY
+  // LOGIKA OVERLAY (CUSTOM TOAST)
   // ======================================================
   void _removeOverlayIfAny() {
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
 
-  // ======================================================
-  // 4. KODE OVERLAY ANDA (Sudah saya lengkapi)
-  // ======================================================
   void _showTopOverlay(String message,
       {Duration duration = const Duration(seconds: 2)}) {
     _removeOverlayIfAny();
@@ -81,7 +95,6 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
           child: Material(
             color: Colors.transparent,
             child: AnimatedOpacity(
-              // Atur opacity ke 1.0 (Anda bisa animasikan ini nanti)
               opacity: 1.0,
               duration: const Duration(milliseconds: 250),
               child: Container(
@@ -118,12 +131,7 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
       },
     );
 
-    // ======================================================
-    // 5. PERINTAH UNTUK MENAMPILKAN DAN MENGHILANGKAN
-    // ======================================================
-    overlay.insert(_overlayEntry!); // Tampilkan overlay ke layar
-
-    // Hilangkan otomatis setelah 'duration'
+    overlay.insert(_overlayEntry!);
     Future.delayed(duration, _removeOverlayIfAny);
   }
 
@@ -140,12 +148,12 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF6FF), // Warna background halaman
+      backgroundColor: const Color(0xFFEFF6FF),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFEFF6FF), // Samakan warna AppBar
+        backgroundColor: const Color(0xFFEFF6FF),
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false, // Judul di kiri
+        centerTitle: false,
         title: const Text('Buat koleksi baru'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -155,16 +163,17 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              icon: const Icon(Icons.save, size: 18),
-              label: const Text('Simpan'),
-              onPressed: _isFormValid ? _onSimpan : null, // Dinamis
+              // Logika Tampilan Tombol: Kalau loading tampilkan putaran, kalau tidak tampilkan icon save
+              icon: _isLoading
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.save, size: 18),
+              label: Text(_isLoading ? 'Menyimpan...' : 'Simpan'),
+              // Matikan tombol jika form tidak valid ATAU sedang loading
+              onPressed: (_isFormValid && !_isLoading) ? _onSimpan : null,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB), // Warna biru
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                backgroundColor: const Color(0xFF2563EB),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -181,7 +190,7 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
-                    'assets/images/sample_note.jpeg', // Ganti ke thumbnail
+                    'assets/images/sample_note.jpeg', // Pastikan gambar ini ada di assets
                     width: 150,
                     height: 100,
                     fit: BoxFit.cover,
@@ -190,7 +199,7 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Judul
+              // Judul Input
               const Text(
                 'Judul koleksi *',
                 style: TextStyle(fontWeight: FontWeight.w600),
@@ -198,6 +207,8 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
               const SizedBox(height: 6),
               TextField(
                 controller: _titleC,
+                autofocus: true, // Keyboard langsung muncul
+                enabled: !_isLoading, // Disable input saat loading
                 decoration: InputDecoration(
                   hintText: 'Contoh: Kriptografi',
                   prefixIcon: const Icon(

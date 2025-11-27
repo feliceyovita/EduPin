@@ -169,7 +169,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildImagePicker(),
+              _buildImagePicker(), // Bagian yang sudah diedit jadi tengah
               const SizedBox(height: 16),
               SectionCard(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -343,16 +343,17 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
   }
 
   // =========================
-  // IMAGE PICKER
+  // IMAGE PICKER (SUDAH DI EDIT JADI TENGAH)
   // =========================
   Widget _buildImagePicker() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center, // <-- Diubah jadi center
       children: [
         const Text("Gambar Catatan *", style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
 
         Wrap(
+          alignment: WrapAlignment.center, // <-- Ditambahkan alignment center
           spacing: 8,
           runSpacing: 8,
           children: [
