@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../services/auth/auth_service.dart';
+
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -10,40 +11,87 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  int _totalCatatan = 0;
+  int _totalSuka = 0;
+  bool _isLoadingStats = false;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
 
+  int get totalCatatan => _totalCatatan;
+  int get totalSuka => _totalSuka;
+  bool get isLoadingStats => _isLoadingStats;
+
   AuthProvider() {
     _initAuthListener();
   }
-  Map<String, dynamic>? userProfile;
 
+  Map<String, dynamic>? userProfile;
   bool isLoadingProfile = false;
 
   User? get currentUser => _authService.currentUser;
 
-  /// Fetch profile from Firestore
   Future<void> loadUserProfile() async {
     if (currentUser == null) return;
 
     isLoadingProfile = true;
     notifyListeners();
 
-    DocumentSnapshot doc =
-    await _firestore.collection('users').doc(currentUser!.uid).get();
+    try {
+      DocumentSnapshot doc =
+      await _firestore.collection('users').doc(currentUser!.uid).get();
 
-    if (doc.exists) {
-      userProfile = doc.data() as Map<String, dynamic>;
+      if (doc.exists) {
+        userProfile = doc.data() as Map<String, dynamic>;
+      }
+
+      await loadUserStats();
+
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
     }
 
     isLoadingProfile = false;
     notifyListeners();
   }
 
-  /// Save changes to Firestore
+  Future<void> loadUserStats() async {
+    if (currentUser == null) return;
+
+    _isLoadingStats = true;
+
+    try {
+      final QuerySnapshot notesQuery = await _firestore
+          .collection('notes')
+          .where('authorId', isEqualTo: currentUser!.uid)
+          .get();
+
+      int notesCount = notesQuery.docs.length;
+      int likesCount = 0;
+
+      for (var doc in notesQuery.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        if (data.containsKey('likes') && data['likes'] is List) {
+          likesCount += (data['likes'] as List).length;
+        } else if (data.containsKey('likeCount') && data['likeCount'] is num) {
+          likesCount += (data['likeCount'] as num).toInt();
+        }
+      }
+
+      _totalCatatan = notesCount;
+      _totalSuka = likesCount;
+
+    } catch (e) {
+      debugPrint("Error loading stats: $e");
+    }
+
+    _isLoadingStats = false;
+    notifyListeners();
+  }
+
   Future<void> updateProfile({
     required String nama,
     required String username,
@@ -59,26 +107,31 @@ class AuthProvider with ChangeNotifier {
       'tanggalLahir': tanggalLahir,
     });
 
-    // update Firebase Auth display name biar sinkron
     await currentUser!.updateDisplayName(nama);
-
-    // refresh provider
     await loadUserProfile();
   }
-
 
   void _initAuthListener() {
     _authService.authStateChanges.listen((User? user) {
       _user = user;
+
+      if (user == null) {
+        userProfile = null;
+        _totalCatatan = 0;
+        _totalSuka = 0;
+      }
+
       notifyListeners();
 
       if (user != null) {
         debugPrint('✅ User logged in: ${user.email}');
+        loadUserProfile();
       } else {
         debugPrint('❌ User logged out');
       }
     });
   }
+
 
   Future<bool> _executeAuth(
       Future<void> Function() operation, {
@@ -210,5 +263,20 @@ class AuthProvider with ChangeNotifier {
     await loadUser();
   }
 
+  Future<void> updateProfilePhoto(String photoUrl) async {
+    if (currentUser == null) return;
 
+    try {
+      await _firestore.collection('users').doc(currentUser!.uid).update({
+        'photoUrl': photoUrl,
+      });
+
+      await currentUser!.updatePhotoURL(photoUrl);
+
+      await loadUserProfile();
+    } catch (e) {
+      debugPrint("Gagal update foto profile: $e");
+      rethrow;
+    }
+  }
 }

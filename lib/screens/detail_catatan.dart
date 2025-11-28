@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -29,6 +31,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   bool pinned = false;
   bool liked = false;
   bool _isDownloading = false;
+
   OverlayEntry? _overlayEntry;
   late Future<NoteDetail> _noteFuture;
 
@@ -39,12 +42,8 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   void initState() {
     super.initState();
     _noteFuture = NotesService().getNoteById(widget.noteId);
-    _checkIfPinned(); // Cek status pin awal
-  }
 
-  void _checkIfPinned() async {
-    bool status = await NotesService().isPinned(widget.noteId);
-    if (mounted) setState(() => pinned = status);
+    _checkLikeStatus();
   }
 
   @override
@@ -119,7 +118,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
     setState(() => _isDownloading = true);
 
-    // Tampilkan Loading Dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -132,7 +130,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
     try {
       for (var url in imageUrls) {
-        // 2. Ambil data bytes gambar dari URL
         final response = await http.get(Uri.parse(url));
 
         if (response.statusCode == 200) {
@@ -149,7 +146,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     } finally {
       // 4. Tutup Loading & Beri Notifikasi
       if (mounted) {
-        Navigator.pop(context); // Tutup dialog loading
+        Navigator.pop(context);
         setState(() => _isDownloading = false);
 
         if (successCount > 0) {
@@ -233,7 +230,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               icon: liked ? Icons.favorite : Icons.favorite_border,
               tooltip: 'Suka',
               toggled: liked,
-              onTap: () => setState(() => liked = !liked),
+              onTap: () => _toggleLike(),
             ),
           ],
         );

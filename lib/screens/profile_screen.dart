@@ -1,11 +1,13 @@
+import 'dart:io'; // Import ini untuk File
 import 'package:edupin/screens/profile_tabs.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // Import Image Picker
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
 import '../provider/auth_provider.dart';
 import '../utils/custom_notification.dart';
 import '../widgets/profile_widgets.dart';
-import '../provider/auth_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   bool _isEditing = false;
+  bool _isUploadingImage = false; // Loading state untuk upload gambar
   late TabController _tabController;
 
   final _namaController = TextEditingController();
@@ -36,7 +39,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
     Future.microtask(() async {
       await auth.loadUserProfile();
-      _loadToControllers(auth.userProfile);
+      if (mounted) {
+        _loadToControllers(auth.userProfile);
+      }
     });
 
     _tabController.addListener(() {
@@ -73,9 +78,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       tanggalLahir: _selectedDate,
     );
 
-    setState(() => _isEditing = false);
-
-    showTopOverlay(context, 'Perubahan Tersimpan');
+    if (mounted) {
+      setState(() => _isEditing = false);
+      showTopOverlay(context, 'Perubahan Tersimpan');
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -95,6 +101,50 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
+  // --- LOGIKA UPLOAD GAMBAR BARU ---
+  Future<void> _pickAndUploadImage(AuthProvider auth) async {
+    final picker = ImagePicker();
+    // 1. Pilih Gambar dari Galeri
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+
+    if (image == null) return; // User membatalkan
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final File file = File(image.path);
+      final String fileName = 'avatar_${auth.user!.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      // 2. Upload ke Supabase (Bucket: avatars)
+      // Pastikan kamu sudah buat bucket bernama 'avatars' di Supabase dashboard
+      await Supabase.instance.client.storage
+          .from('avatars')
+          .upload(fileName, file);
+
+      // 3. Ambil Public URL
+      final String publicUrl = Supabase.instance.client.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+      // 4. Update URL ke Firestore via Provider
+      await auth.updateProfilePhoto(publicUrl);
+
+      if (mounted) {
+        showTopOverlay(context, 'Foto profil diperbarui');
+      }
+
+    } catch (e) {
+      debugPrint("Error upload: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal upload gambar: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
@@ -108,8 +158,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget _buildUI(AuthProvider auth, Map<String, dynamic> data) {
     const double blueHeaderHeight = 152.0;
     const double avatarTopPosition = 82.0;
-    const double avatarOuterRadius = 46.0;
-    const double avatarInnerRadius = 43.0;
+    const double avatarOuterRadius = 50.0; // Sedikit diperbesar
+    const double avatarInnerRadius = 46.0;
+
+    // Cek apakah user punya foto profil
+    String? photoUrl = data['photoUrl'];
+    String inisial = (data['nama'] != null && data['nama'].isNotEmpty)
+        ? data['nama'][0].toUpperCase()
+        : "U";
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F5F9),
@@ -121,25 +177,66 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.topRight,
                   colors: [Color(0xFF4FA0FF), Color(0xFF2A7EFF), Color(0xFF165EFC)]),
             ))]),
+
             Column(
               children: [
                 const SizedBox(height: avatarTopPosition),
-                CircleAvatar(
-                  radius: avatarOuterRadius,
-                  backgroundColor: Colors.white,
-                  child: CircleAvatar(
-                    radius: avatarInnerRadius,
-                    backgroundColor: const Color(0xFF2782FF),
-                    child: Text(
-                      (data['nama'] ?? "U")[0].toUpperCase(),
-                      style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
+
+                GestureDetector(
+                  onTap: _isEditing ? () => _pickAndUploadImage(auth) : null, // Hanya bisa klik saat mode Edit aktif
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: avatarOuterRadius,
+                        backgroundColor: Colors.white,
+                        child: CircleAvatar(
+                          radius: avatarInnerRadius,
+                          backgroundColor: const Color(0xFF2782FF),
+                          backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                              ? NetworkImage(photoUrl)
+                              : null,
+                          child: (photoUrl == null || photoUrl.isEmpty)
+                              ? Text(
+                            inisial,
+                            style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.bold),
+                          )
+                              : null,
+                        ),
+                      ),
+
+                      if (_isUploadingImage)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.black45,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                          ),
+                        ),
+
+                      if (_isEditing && !_isUploadingImage)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: const Icon(Icons.camera_alt, color: Color(0xFF2782FF), size: 20),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+
                 const SizedBox(height: 8),
-                Text(data['nama'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6E7E96))),
+                Text(data['nama'] ?? 'Pengguna', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6E7E96))),
                 const SizedBox(height: 2),
-                Text('@${data['username']}', style: TextStyle(fontSize: 16, color: const Color(0xFF6E7E96).withOpacity(0.9))),
+                Text('@${data['username'] ?? '-'}', style: TextStyle(fontSize: 16, color: const Color(0xFF6E7E96).withOpacity(0.9))),
                 const SizedBox(height: 14),
 
                 _isEditing
@@ -164,9 +261,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ProfileStatColumn(value: "–", label: 'Catatan'),
+                    ProfileStatColumn(
+                        value: auth.isLoadingStats ? "..." : auth.totalCatatan.toString(),
+                        label: 'Catatan'
+                    ),
                     const SizedBox(width: 40),
-                    ProfileStatColumn(value: "–", label: 'Suka'),
+                    ProfileStatColumn(
+                        value: auth.isLoadingStats ? "..." : auth.totalSuka.toString(),
+                        label: 'Suka'
+                    ),
                   ],
                 ),
 
