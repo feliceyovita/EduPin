@@ -7,9 +7,6 @@ import 'package:provider/provider.dart';
 import '../models/note_details.dart';
 import '../provider/auth_provider.dart';
 
-import '../widgets/profile_widgets.dart';
-import '../utils/custom_notification.dart';
-
 const String kFontFamily = 'AlbertSans';
 
 // ==================================================
@@ -140,6 +137,7 @@ class ProfileInfoRow extends StatelessWidget {
     );
   }
 }
+
 // ==================================================
 // 2. TAMPILAN TAB TENTANG (MODE EDIT)
 // ==================================================
@@ -283,6 +281,9 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid;
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(20),
@@ -331,8 +332,13 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
           ),
           const SizedBox(height: 20),
 
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('notes').snapshots(),
+          uid == null
+              ? const Center(child: Text("Silakan login untuk melihat catatan"))
+              : StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notes')
+                .where('authorId', isEqualTo: uid) // <--- INI FILTER PENTINGNYA
+                .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -394,9 +400,9 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
   }
 
   Widget _buildNoteCard(Map<String, dynamic> note, BuildContext context) {
-    final image = note['imageAssets'].isNotEmpty
+    final image = (note['imageAssets'] != null && (note['imageAssets'] as List).isNotEmpty)
         ? NetworkImage(note['imageAssets'][0])
-        : AssetImage('assets/images/default_note.png') as ImageProvider;
+        : const AssetImage('assets/images/default_note.png') as ImageProvider;
 
     final noteDetailObject = NoteDetail(
       id: note['docId'] ?? '',
@@ -552,7 +558,6 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
     ));
   }
 }
-
 
 // ==================================================
 // 4. TAMPILAN TAB PENGATURAN

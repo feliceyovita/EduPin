@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/note_details.dart';
@@ -118,44 +120,66 @@ class ReportNoteScreen extends StatelessWidget {
 
     if (ok != true) return;
 
-    // TODO: kirim ke backend Firebase nanti (collection "reports")
+    try {
+      final user = FirebaseAuth.instance.currentUser;
 
-    // Dialog sukses
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
-            SizedBox(height: 12),
-            Text('Terima kasih untuk melaporkan', style: TextStyle(fontWeight: FontWeight.w700)),
-            SizedBox(height: 6),
-            Text(
-              'Kami akan mengambil tindakan jika ada pelanggaran panduan komunitas.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13),
+      final String reporterId = user?.uid ?? 'anonymous';
+
+      await FirebaseFirestore.instance.collection('reports').add({
+        'noteId': note.id,
+        'noteTitle': note.title,
+        'reason': reason,
+        'reporterId': reporterId,
+        'reportedAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+        'authorId': note.authorId,
+      });
+
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+              SizedBox(height: 12),
+              Text('Terima kasih untuk melaporkan', style: TextStyle(fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text(
+                'Laporan Anda telah kami terima dan akan segera ditinjau oleh tim kami.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('OK'),
+              ),
             ),
           ],
         ),
-        actions: [
-          Center(
-            child: FilledButton(
-              onPressed: () => Navigator.pop(ctx),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('OK'),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
 
-    if (context.mounted) context.pop();
+      if (context.mounted) context.pop();
+
+    } catch (e) {
+      debugPrint("Gagal melapor: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal mengirim laporan: $e")),
+        );
+      }
+    }
   }
 }

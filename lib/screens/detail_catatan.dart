@@ -472,18 +472,20 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                 if (pinned) _showPinSheet();
               },
             ),
-            // TOMBOL DOWNLOAD
-            ActionIconButton(
-              icon: _isDownloading
-                  ? Icons.hourglass_empty
-                  : Icons.download_outlined,
-              tooltip: 'Download',
-              onTap: () {
-                if (!_isDownloading) {
-                  _downloadImages(d.imageAssets);
-                }
-              },
-            ),
+            if (d.izinkanUnduh) ...[
+              ActionIconButton(
+                icon: _isDownloading
+                    ? Icons.hourglass_empty
+                    : Icons.download_outlined,
+                tooltip: 'Download',
+                onTap: () {
+                  if (!_isDownloading) {
+                    _downloadImages(d.imageAssets);
+                  }
+                },
+              ),
+            ],
+
             // TOMBOL REPORT
             ActionIconButton(
               icon: Icons.flag_outlined,
@@ -492,7 +494,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
             ),
             const Spacer(),
 
-            // 3. TOMBOL LIKE
+            // TOMBOL LIKE
             ActionIconButton(
               icon: liked ? Icons.favorite : Icons.favorite_border,
               tooltip: 'Suka',

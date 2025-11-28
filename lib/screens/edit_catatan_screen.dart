@@ -1,5 +1,9 @@
+import 'dart:io'; // Import untuk File
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/note_details.dart';
 import '../widgets/section_card.dart';
 
@@ -24,7 +28,10 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
 
   bool _publikasi = true;
   bool _izinkanUnduh = true;
-  bool _hasImage = false;
+
+  String? _currentImageUrl;
+  bool _isUploading = false;
+  bool _isSaving = false;
 
   // ---------- DATA DROPDOWN ----------
   static const _subjects = [
@@ -47,7 +54,7 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
 
   // ---------- VALIDASI ----------
   bool get _isFormValid {
-    return _hasImage &&
+    return _currentImageUrl != null &&
         _titleC.text.trim().isNotEmpty &&
         _descC.text.trim().isNotEmpty &&
         _selectedSubject != null &&
@@ -64,12 +71,15 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
     _titleC.text = note.title;
     _descC.text = note.description;
     _schoolC.text = note.school ?? "";
-    _selectedSubject = note.subject;
-    _selectedGrade = note.grade;
+    _selectedSubject = _subjects.contains(note.subject) ? note.subject : null;
+    _selectedGrade = _grades.contains(note.grade) ? note.grade : null;
     _tags.addAll(note.tags);
-    _hasImage = note.imageAssets.isNotEmpty;
     _publikasi = note.publikasi;
     _izinkanUnduh = note.izinkanUnduh;
+
+    if (note.imageAssets.isNotEmpty) {
+      _currentImageUrl = note.imageAssets[0];
+    }
 
     _titleC.addListener(_onFormChange);
     _descC.addListener(_onFormChange);
@@ -98,37 +108,76 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
     _tagInputC.clear();
   }
 
-  void _onChangeImage() {
-    // Logika untuk mengganti gambar utama
-    setState(() {
-      _hasImage = true;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Dummy: Logika ganti gambar...',
-        ),
-      ),
-    );
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+
+    if (image == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final File file = File(image.path);
+      final String fileName = 'note_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      await Supabase.instance.client.storage
+          .from('image_catatan')
+          .upload(fileName, file);
+
+      final String publicUrl = Supabase.instance.client.storage
+          .from('image_catatan')
+          .getPublicUrl(fileName);
+
+      setState(() {
+        _currentImageUrl = publicUrl;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gambar berhasil diunggah!'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      debugPrint("Upload Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal upload: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() => _isUploading = false);
+    }
   }
 
-  void _onAddNewImage() {
-    // Logika untuk menambah gambar baru
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Dummy: Logika tambah gambar baru...'),
-      ),
-    );
-  }
+  Future<void> _onSaveChanges() async {
+    if (!_isFormValid) return;
 
-  void _onSaveChanges() {
-    // Logika simpan perubahan ke backend
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Catatan berhasil diperbarui (dummy).'),
-      ),
-    );
-    context.pop();
+    setState(() => _isSaving = true);
+
+    try {
+      await FirebaseFirestore.instance.collection('notes').doc(widget.note.id).update({
+        'title': _titleC.text.trim(),
+        'description': _descC.text.trim(),
+        'subject': _selectedSubject,
+        'grade': _selectedGrade,
+        'school': _schoolC.text.trim(),
+        'tags': _tags,
+        'publikasi': _publikasi,
+        'izinkanUnduh': _izinkanUnduh,
+        'imageAssets': _currentImageUrl != null ? [_currentImageUrl] : [],
+        'imageUrl': _currentImageUrl, // Update juga field legacy jika ada
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Catatan berhasil diperbarui!'), backgroundColor: Colors.green),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -167,9 +216,9 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildImagePreview(), // Preview gambar yang sudah ada
+                      _buildImagePreview(),
                       const SizedBox(width: 16),
-                      _buildAddImageButton(), // Tombol tambah gambar baru
+                      _buildAddImageButton(),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -177,7 +226,7 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
                   const SizedBox(height: 16),
                   _buildPublishSettingsCard(),
                   const SizedBox(height: 16),
-                  _buildSaveChangesButton(), // Tombol gradien
+                  _buildSaveChangesButton(),
                   const SizedBox(height: 4),
                   const Text(
                     'Dengan mengunggah, Anda setuju dengan kebijakan Komunitas EduPin.',
@@ -193,11 +242,10 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
     );
   }
 
-  // ---------- WIDGET: PREVIEW GAMBAR ----------
   Widget _buildImagePreview() {
     return Center(
       child: GestureDetector(
-        onTap: _onChangeImage,
+        onTap: _isUploading ? null : _pickAndUploadImage,
         child: Container(
           width: 140,
           height: 140,
@@ -211,12 +259,16 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
                 offset: Offset(0, 4),
               ),
             ],
-            image: const DecorationImage(
-              image: AssetImage('assets/images/sample_note.jpeg'), // Placeholder
+            image: DecorationImage(
+              image: (_currentImageUrl != null && _currentImageUrl!.isNotEmpty)
+                  ? NetworkImage(_currentImageUrl!)
+                  : const AssetImage('assets/images/sample_note.jpeg') as ImageProvider,
               fit: BoxFit.cover,
             ),
           ),
-          child: Container(
+          child: _isUploading
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : Container(
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(16),
@@ -243,13 +295,12 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
     );
   }
 
-  // ---------- WIDGET: TOMBOL TAMBAH GAMBAR ----------
   Widget _buildAddImageButton() {
     return GestureDetector(
-      onTap: _onAddNewImage,
+      onTap: _isUploading ? null : _pickAndUploadImage,
       child: Container(
-        width: 100, // Dibuat lebih kecil dari preview
-        height: 140, // Tinggi disamakan agar sejajar
+        width: 100,
+        height: 140,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -273,7 +324,7 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              'Tambah Gambar',
+              'Ganti Gambar',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12),
             ),
@@ -283,9 +334,7 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
     );
   }
 
-  // ---------- CARD UTAMA FORM ----------
   Widget _buildMainFormCard() {
-    // Border radius 10px
     final OutlineInputBorder _inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: Color(0xFFB3BECD), width: 1),
@@ -301,7 +350,6 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // JUDUL
           const Text(
             'Judul Catatan *',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -322,7 +370,6 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // DESKRIPSI
           const Text(
             'Deskripsi *',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -341,14 +388,13 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // MATA PELAJARAN
           const Text(
             'Mata Pelajaran *',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            value: _selectedSubject, // 'value' dipakai untuk data yg sudah ada
+            value: _selectedSubject,
             decoration: InputDecoration(
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -364,14 +410,13 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // TINGKAT / KELAS
           const Text(
             'Tingkat/Kelas *',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
-            value: _selectedGrade, // 'value' dipakai untuk data yg sudah ada
+            value: _selectedGrade,
             decoration: InputDecoration(
               border: _inputBorder,
               enabledBorder: _inputBorder,
@@ -387,7 +432,6 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // SEKOLAH OPSIONAL
           const Text(
             'Asal Sekolah/Universitas (opsional)',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -404,7 +448,6 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
           ),
           const SizedBox(height: 12),
 
-          // TAGS
           const Text(
             'Tags *',
             style: TextStyle(fontWeight: FontWeight.w600),
@@ -438,7 +481,7 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10), // Samakan
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onPressed: _onAddTag,
@@ -584,11 +627,10 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
     );
   }
 
-  // ---------- TOMBOL SIMPAN (Versi Gradient) ----------
+  // ---------- TOMBOL SIMPAN ----------
   Widget _buildSaveChangesButton() {
-    final bool isEnabled = _isFormValid;
+    final bool isEnabled = _isFormValid && !_isUploading && !_isSaving;
 
-    // Definisikan gradient birunya di sini
     const gradient = LinearGradient(
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
@@ -599,14 +641,12 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
       ],
     );
 
-    // Style untuk teks dan ikon (saat enabled)
     final textStyle = const TextStyle(
       fontWeight: FontWeight.w600,
       color: Colors.white,
     );
     const iconColor = Colors.white;
 
-    // Style untuk teks dan ikon (saat disabled)
     final disabledTextStyle = TextStyle(
       fontWeight: FontWeight.w600,
       color: Colors.white.withOpacity(0.8),
@@ -625,19 +665,25 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
         shape: const StadiumBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap:  isEnabled ? _onSaveChanges : null,
+          onTap: isEnabled ? _onSaveChanges : null,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.save_outlined,
-                  color: isEnabled ? iconColor : disabledIconColor,
-                ),
-                const SizedBox(width: 8), // Jarak antara ikon dan teks
+                if (_isSaving)
+                  const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                else
+                  Icon(
+                    Icons.save_outlined,
+                    color: isEnabled ? iconColor : disabledIconColor,
+                  ),
+                const SizedBox(width: 8),
                 Text(
-                  'Simpan Perubahan',
+                  _isSaving ? 'Menyimpan...' : 'Simpan Perubahan',
                   style: isEnabled ? textStyle : disabledTextStyle,
                 ),
               ],
