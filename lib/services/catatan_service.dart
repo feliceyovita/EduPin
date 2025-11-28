@@ -56,7 +56,6 @@ class NotesService {
     final user = _auth.currentUser;
     if (user == null) throw Exception("User belum login");
 
-    // Simpan di: users -> [UID] -> pins -> [NoteID]
     await _db
         .collection('users')
         .doc(user.uid)
@@ -69,7 +68,7 @@ class NotesService {
     });
   }
 
-  // 6. CEK APAKAH CATATAN SUDAH DIPIN? (UNTUK IKON NYALA/MATI)
+  // 6. CEK APAKAH CATATAN SUDAH DIPIN?
   Future<bool> isPinned(String noteId) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -88,7 +87,7 @@ class NotesService {
   // BAGIAN 3: KOLEKSI / PAPAN (BOARDS)
   // ==========================================
 
-  // 7. AMBIL DAFTAR KOLEKSI USER (UNTUK BOTTOM SHEET DINAMIS & PAPAN SCREEN)
+  // 7. AMBIL DAFTAR KOLEKSI USER
   Stream<QuerySnapshot> streamKoleksi() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -103,7 +102,7 @@ class NotesService {
         .snapshots();
   }
 
-  // 8. BUAT KOLEKSI BARU (UNTUK HALAMAN 'PIN BARU')
+  // 8. BUAT KOLEKSI BARU
   Future<void> buatPapanBaru(String namaPapan) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("User belum login");
@@ -119,14 +118,11 @@ class NotesService {
     });
   }
 
-  // ==========================================
-  // 9. AMBIL NOTES DI DALAM PAPAN TERTENTU (YANG KURANG TADI)
-  // ==========================================
+  // 9. AMBIL NOTES DI DALAM PAPAN TERTENTU
   Future<List<NoteDetail>> getNotesInBoard(String boardName) async {
     final user = _auth.currentUser;
     if (user == null) return [];
 
-    // 1. Ambil daftar PIN yang nama collection-nya = boardName
     final pinSnapshot = await _db
         .collection('users')
         .doc(user.uid)
@@ -137,28 +133,57 @@ class NotesService {
 
     List<NoteDetail> results = [];
 
-    // 2. Loop setiap pin, ambil ID-nya, lalu fetch data Catatan aslinya
-    // Kita pakai Future.wait supaya request-nya jalan barengan (lebih cepat)
     final futures = pinSnapshot.docs.map((doc) async {
       final noteId = doc['noteId'];
       try {
-        // Reuse fungsi getNoteById yang sudah ada di atas
         final note = await getNoteById(noteId);
         return note;
       } catch (e) {
-        // Kalau catatan aslinya udah dihapus pemilik, kita return null
         return null;
       }
     });
 
-    // Tunggu semua data selesai diambil
     final notes = await Future.wait(futures);
 
-    // Filter yang null (catatan terhapus)
     for (var n in notes) {
       if (n != null) results.add(n);
     }
 
     return results;
+  } // <--- PENUTUP getNotesInBoard HARUSNYA DI SINI
+
+  // ==========================================
+  // 10. HAPUS PAPAN & ISI PIN-NYA
+  // ==========================================
+  // FUNGSI INI HARUS DI LUAR getNotesInBoard
+  Future<void> hapusPapan(String boardId, String boardName) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final batch = _db.batch();
+
+    // 1. Hapus Papan
+    final boardRef = _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('boards')
+        .doc(boardId);
+
+    batch.delete(boardRef);
+
+    // 2. Cari semua Pin terkait, lalu hapus
+    final pinsSnapshot = await _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('pins')
+        .where('collection', isEqualTo: boardName)
+        .get();
+
+    for (var doc in pinsSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 3. Jalankan batch
+    await batch.commit();
   }
 }

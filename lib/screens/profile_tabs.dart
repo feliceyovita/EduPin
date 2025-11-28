@@ -7,6 +7,10 @@ import 'package:provider/provider.dart';
 import '../models/note_details.dart';
 import '../provider/auth_provider.dart';
 
+// Pastikan file widget ini ada, atau hapus import jika tidak pakai
+// import '../widgets/profile_widgets.dart';
+// import '../utils/custom_notification.dart';
+
 const String kFontFamily = 'AlbertSans';
 
 // ==================================================
@@ -61,6 +65,7 @@ class ProfileAboutView extends StatelessWidget {
                   width: 16,
                   height: 16,
                   color: Colors.white,
+                  errorBuilder: (ctx, err, stack) => const Icon(Icons.edit, size: 16, color: Colors.white),
                 ),
                 label: const Text(
                   'Edit Profil',
@@ -73,8 +78,7 @@ class ProfileAboutView extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2782FF),
                   shape: const StadiumBorder(),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   elevation: 2,
                 ),
               ),
@@ -82,29 +86,24 @@ class ProfileAboutView extends StatelessWidget {
           ),
           const Divider(height: 30),
           ProfileInfoRow(
-            iconWidget: Image.asset('assets/images/mail.png',
-                width: iconSize, height: iconSize, color: iconColor),
+            iconWidget: Image.asset('assets/images/mail.png', width: iconSize, height: iconSize, color: iconColor, errorBuilder: (_,__,___)=> Icon(Icons.mail, size: iconSize, color: iconColor)),
             text: userData['email'] ?? '-',
           ),
           const SizedBox(height: 18),
           ProfileInfoRow(
-            iconWidget: Image.asset('assets/images/calender.png',
-                width: iconSize, height: iconSize, color: iconColor),
+            iconWidget: Image.asset('assets/images/calender.png', width: iconSize, height: iconSize, color: iconColor, errorBuilder: (_,__,___)=> Icon(Icons.calendar_today, size: iconSize, color: iconColor)),
             text: formatTanggal(userData['tanggalLahir']),
           ),
           const SizedBox(height: 18),
           ProfileInfoRow(
-            iconWidget: Image.asset('assets/images/univ.png',
-                width: iconSize, height: iconSize, color: iconColor),
+            iconWidget: Image.asset('assets/images/univ.png', width: iconSize, height: iconSize, color: iconColor, errorBuilder: (_,__,___)=> Icon(Icons.school, size: iconSize, color: iconColor)),
             text: userData['sekolah'] ?? '-',
           ),
           const SizedBox(height: 18),
           ProfileInfoRow(
-            iconWidget: Image.asset('assets/images/people.png',
-                width: iconSize, height: iconSize, color: iconColor),
+            iconWidget: Image.asset('assets/images/people.png', width: iconSize, height: iconSize, color: iconColor, errorBuilder: (_,__,___)=> Icon(Icons.person, size: iconSize, color: iconColor)),
             text: formatTanggal(userData['createdAt']),
           ),
-
         ],
       ),
     );
@@ -251,7 +250,7 @@ class ProfileTextField extends StatelessWidget {
 }
 
 // ==================================================
-// 3. TAMPILAN TAB CATATAN
+// 3. TAMPILAN TAB CATATAN (FINAL FIX)
 // ==================================================
 class ProfileNotesTab extends StatefulWidget {
   const ProfileNotesTab({super.key});
@@ -261,6 +260,7 @@ class ProfileNotesTab extends StatefulWidget {
 }
 
 class _ProfileNotesTabState extends State<ProfileNotesTab> {
+  // Variabel state untuk toggle edit
   bool _isEditingNotes = false;
 
   void _toggleEdit() {
@@ -279,128 +279,145 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
     return '-';
   }
 
+  void showTopOverlay(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.green,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 1. Ambil User ID
     final user = FirebaseAuth.instance.currentUser;
-    final uid = user?.uid;
+    if (user == null) return const Center(child: CircularProgressIndicator());
 
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    // 2. StreamBuilder di Top Level
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('notes')
+          .where('authorId', isEqualTo: user.uid) // Filter punya saya
+          .snapshots(),
+      builder: (context, snapshot) {
+
+        final bool hasNotes = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+        return Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(20),
+          child: Column(
             children: [
-              const Text(
-                'Catatan Saya',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                  fontFamily: kFontFamily,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _toggleEdit,
-                icon: Image.asset(
-                  _isEditingNotes
-                      ? 'assets/images/save.png'
-                      : 'assets/images/edit_whole.png',
-                  width: 16,
-                  height: 16,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  _isEditingNotes ? 'Selesai' : 'Edit Catatan',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: kFontFamily,
+              // --- HEADER ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Catatan Saya',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF333333),
+                      fontFamily: kFontFamily,
+                    ),
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isEditingNotes
-                      ? const Color(0xFF00C853)
-                      : const Color(0xFF2782FF),
-                  shape: const StadiumBorder(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  elevation: 2,
-                ),
+
+                  // Tombol Edit hanya muncul jika ada notes
+                  if (hasNotes)
+                    ElevatedButton.icon(
+                      onPressed: _toggleEdit,
+                      icon: Image.asset(
+                        _isEditingNotes
+                            ? 'assets/images/save.png'
+                            : 'assets/images/edit_whole.png',
+                        width: 16,
+                        height: 16,
+                        color: Colors.white,
+                        errorBuilder: (_,__,___) => Icon(_isEditingNotes ? Icons.save : Icons.edit, size: 16, color: Colors.white),
+                      ),
+                      label: Text(
+                        _isEditingNotes ? 'Selesai' : 'Edit Catatan',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: kFontFamily,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isEditingNotes
+                            ? const Color(0xFF00C853)
+                            : const Color(0xFF2782FF),
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        elevation: 2,
+                      ),
+                    ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-          uid == null
-              ? const Center(child: Text("Silakan login untuk melihat catatan"))
-              : StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('notes')
-                .where('authorId', isEqualTo: uid) // <--- INI FILTER PENTINGNYA
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Container(
+              // --- CONTENT ---
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const Padding(
+                  padding: EdgeInsets.only(top: 50),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (!hasNotes)
+                Container(
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset('assets/images/edit_whole.png',
-                          width: 50, height: 50, color: Colors.grey.shade300),
+                          width: 50, height: 50, color: Colors.grey.shade300,
+                          errorBuilder: (_,__,___)=> Icon(Icons.note_add, size: 50, color: Colors.grey.shade300)),
                       const SizedBox(height: 10),
                       const Text('Belum ada catatan',
                           style: TextStyle(
                               color: Colors.grey, fontFamily: kFontFamily)),
                     ],
                   ),
-                );
-              }
+                )
+              else
+                ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: snapshot.data!.docs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final doc = snapshot.data!.docs[index];
+                    final data = doc.data() as Map<String, dynamic>;
 
-              final notes = snapshot.data!.docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return {
-                  "docId": doc.id,
-                  "title": data['title'] ?? 'Tanpa Judul',
-                  "description": data['description'] ?? '',
-                  "grade": data['grade'] ?? '',
-                  "category": data['subject'] ?? 'Umum',
-                  "pinCount": data['pinCount'] ?? 0,
-                  "date": formatTanggal(data['createdAt']),
-                  "authorId": data['authorId'] ?? '',
-                  "imageAssets": data['imageAssets'] ?? [],
-                  "imageUrl": data['imageUrl'] ?? '',
-                  "izinkanUnduh": data['izinkanUnduh'] ?? false,
-                  "publikasi": data['publikasi'] ?? false,
-                  "publisher": data['publisher'] ?? {},
-                  "tags": data['tags'] ?? [],
-                };
-              }).toList();
+                    final noteMap = {
+                      "docId": doc.id,
+                      "title": data['title'] ?? 'Tanpa Judul',
+                      "description": data['description'] ?? '',
+                      "grade": data['grade'] ?? '',
+                      "category": data['subject'] ?? 'Umum',
+                      "pinCount": data['pinCount'] ?? 0,
+                      "date": formatTanggal(data['createdAt']),
+                      "authorId": data['authorId'] ?? '',
+                      "imageAssets": data['imageAssets'] ?? [],
+                      "imageUrl": data['imageUrl'] ?? '',
+                      "izinkanUnduh": data['izinkanUnduh'] ?? false,
+                      "publikasi": data['publikasi'] ?? false,
+                      "publisher": data['publisher'] ?? {},
+                      "tags": data['tags'] ?? [],
+                    };
 
-              return ListView.separated(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: notes.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final note = notes[index];
-                  return _buildNoteCard(note, context);
-                },
-              );
-            },
+                    return _buildNoteCard(noteMap, context);
+                  },
+                ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
+  // --- BUILD CARD (SEKARANG DI DALAM CLASS) ---
   Widget _buildNoteCard(Map<String, dynamic> note, BuildContext context) {
-    final image = (note['imageAssets'] != null && (note['imageAssets'] as List).isNotEmpty)
+    final image = (note['imageAssets'] as List).isNotEmpty
         ? NetworkImage(note['imageAssets'][0])
         : const AssetImage('assets/images/default_note.png') as ImageProvider;
 
@@ -419,6 +436,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
       publikasi: note['publikasi'] ?? true,
       izinkanUnduh: note['izinkanUnduh'] ?? true,
     );
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -474,8 +492,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Image.asset('assets/images/pin.png',
-                        width: 14, height: 14, color: Colors.grey.shade600),
+                    Image.asset('assets/images/pin.png', width: 14, height: 14, color: Colors.grey.shade600, errorBuilder: (_,__,___)=> Icon(Icons.push_pin, size: 14, color: Colors.grey.shade600)),
                     const SizedBox(width: 4),
                     Text('${note['pinCount'] ?? 0}',
                         style: TextStyle(
@@ -492,6 +509,9 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                         )),
                   ],
                 ),
+
+                // TOMBOL EDIT & HAPUS (Hanya muncul jika mode edit aktif)
+                // KARENA FUNGSI INI DI DALAM CLASS, DIA BISA AKSES _isEditingNotes
                 if (_isEditingNotes) ...[
                   const SizedBox(height: 12),
                   Row(
@@ -501,8 +521,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                         onPressed: () {
                           context.push('/edit_catatan', extra: noteDetailObject);
                         },
-                        icon: Image.asset('assets/images/edit_2.png',
-                            width: 12, height: 12, color: const Color(0xFF2782FF)),
+                        icon: Image.asset('assets/images/edit_2.png', width: 12, height: 12, color: const Color(0xFF2782FF), errorBuilder: (_,__,___)=> const Icon(Icons.edit, size: 12, color: Color(0xFF2782FF))),
                         label: const Text('Edit',
                             style: TextStyle(
                                 fontFamily: kFontFamily,
@@ -521,10 +540,10 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                       const SizedBox(width: 10),
                       OutlinedButton.icon(
                         onPressed: () async {
+                          // Konfirmasi hapus bisa ditambahkan di sini
                           await FirebaseFirestore.instance.collection('notes').doc(note['docId']).delete();
                         },
-                        icon: Image.asset('assets/images/delete.png',
-                            width: 12, height: 12, color: Colors.red),
+                        icon: Image.asset('assets/images/delete.png', width: 12, height: 12, color: Colors.red, errorBuilder: (_,__,___)=> const Icon(Icons.delete, size: 12, color: Colors.red)),
                         label: const Text('Hapus',
                             style: TextStyle(
                                 fontFamily: kFontFamily,
@@ -550,14 +569,8 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
       ),
     );
   }
-
-  void showTopOverlay(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.green,
-    ));
-  }
 }
+
 
 // ==================================================
 // 4. TAMPILAN TAB PENGATURAN
@@ -597,7 +610,7 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                   decoration: const BoxDecoration(
                       color: Color(0xFFFFEBEE), shape: BoxShape.circle),
                   child: Image.asset('assets/images/logout__red.png',
-                      width: 24, height: 24, color: const Color(0xFFEF4444)),
+                      width: 24, height: 24, color: const Color(0xFFEF4444), errorBuilder: (_,__,___)=> const Icon(Icons.logout, color: Color(0xFFEF4444))),
                 ),
                 const SizedBox(height: 16),
                 const Text('Keluar dari akun?',
@@ -676,7 +689,7 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                   decoration: const BoxDecoration(
                       color: Color(0xFFFFEBEE), shape: BoxShape.circle),
                   child: Image.asset('assets/images/alert__triangle.png',
-                      width: 24, height: 24, color: const Color(0xFFEF4444)),
+                      width: 24, height: 24, color: const Color(0xFFEF4444), errorBuilder: (_,__,___)=> const Icon(Icons.warning, color: Color(0xFFEF4444))),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -916,7 +929,7 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                   Row(
                     children: [
                       Image.asset('assets/images/notification.png',
-                          width: 24, height: 24, color: Colors.grey.shade700),
+                          width: 24, height: 24, color: Colors.grey.shade700, errorBuilder: (_,__,___)=> const Icon(Icons.notifications, color: Colors.grey)),
                       const SizedBox(width: 15),
                       const Expanded(
                         child: Column(
@@ -975,7 +988,7 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                     child: OutlinedButton.icon(
                       onPressed: () => _showDeleteConfirmationDialog(context),
                       icon: Image.asset('assets/images/delete.png',
-                          width: 18, height: 18, color: Colors.red),
+                          width: 18, height: 18, color: Colors.red, errorBuilder: (_,__,___)=> const Icon(Icons.delete, size: 18, color: Colors.red)),
                       label: const Text('Hapus Akun',
                           style: TextStyle(
                               fontFamily: kFontFamily,
@@ -996,7 +1009,7 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                     child: ElevatedButton.icon(
                       onPressed: () => _showLogoutConfirmationDialog(context),
                       icon: Image.asset('assets/images/logout_white.png',
-                          width: 18, height: 18),
+                          width: 18, height: 18, errorBuilder: (_,__,___)=> const Icon(Icons.logout, size: 18, color: Colors.white)),
                       label: const Text('Keluar dari Akun',
                           style: TextStyle(
                               fontSize: 15,

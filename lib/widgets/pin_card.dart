@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/note_details.dart';
+import 'save_to_pin_sheet.dart';
 
 class PinCard extends StatefulWidget {
   final NoteDetail data;
@@ -28,13 +29,11 @@ class _PinCardState extends State<PinCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail (FROM SUPABASE URL)
+          // Thumbnail
           InkWell(
             onTap: () => context.push('/detail_catatan', extra: widget.data.id),
-
             child: ClipRRect(
-              borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.network(
                 widget.data.imageUrl.isNotEmpty
                     ? widget.data.imageUrl
@@ -66,9 +65,32 @@ class _PinCardState extends State<PinCard> {
                         ),
                       ),
                     ),
+
+                    // --- BAGIAN ICON PIN YANG DIUBAH ---
                     GestureDetector(
                       onTap: () {
-                        context.push('/pin_baru');
+                        // 2. TAMPILKAN BOTTOM SHEET (BUKAN PUSH PAGE)
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true, // Biar bisa tinggi
+                          backgroundColor: Colors.transparent, // Biar rounded corner kelihatan
+                          builder: (context) => SaveToPinSheet(
+                            noteId: widget.data.id,
+
+                            // TAMBAHKAN INI:
+                            onSuccess: (namaPapan) {
+                              // Ini dijalankan ketika berhasil simpan
+                              // Kita munculkan SnackBar hijau di Home
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Berhasil disimpan ke "$namaPapan"'),
+                                  backgroundColor: Colors.green,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                        );
                       },
                       child: const Icon(
                         Icons.push_pin_outlined,
@@ -76,6 +98,7 @@ class _PinCardState extends State<PinCard> {
                         color: Colors.grey,
                       ),
                     )
+                    // -----------------------------------
                   ],
                 ),
 
@@ -83,18 +106,14 @@ class _PinCardState extends State<PinCard> {
 
                 // Subject
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.blue,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     widget.data.subject,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
 
@@ -113,10 +132,7 @@ class _PinCardState extends State<PinCard> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.blue.shade100),
                         ),
-                        child: Text(
-                          "#$tag",
-                          style: const TextStyle(fontSize: 11, color: Colors.blue),
-                        ),
+                        child: Text("#$tag", style: const TextStyle(fontSize: 11, color: Colors.blue)),
                       );
                     }).toList(),
                   ),
@@ -129,14 +145,9 @@ class _PinCardState extends State<PinCard> {
                   children: [
                     Text(
                       "by ${widget.data.publisher.name}",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade700,
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
                     ),
                     const Spacer(),
-
-                    // LIKE BUTTON
                     InkWell(
                       onTap: () {
                         setState(() {
