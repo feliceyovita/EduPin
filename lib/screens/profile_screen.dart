@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../provider/auth_provider.dart';
 import '../utils/custom_notification.dart';
 import '../widgets/profile_widgets.dart';
-import '../provider/auth_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -36,7 +35,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
     Future.microtask(() async {
       await auth.loadUserProfile();
-      _loadToControllers(auth.userProfile);
+      if (mounted) {
+        _loadToControllers(auth.userProfile);
+      }
     });
 
     _tabController.addListener(() {
@@ -73,9 +74,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       tanggalLahir: _selectedDate,
     );
 
-    setState(() => _isEditing = false);
-
-    showTopOverlay(context, 'Perubahan Tersimpan');
+    if (mounted) {
+      setState(() => _isEditing = false);
+      showTopOverlay(context, 'Perubahan Tersimpan');
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -121,6 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.topRight,
                   colors: [Color(0xFF4FA0FF), Color(0xFF2A7EFF), Color(0xFF165EFC)]),
             ))]),
+
             Column(
               children: [
                 const SizedBox(height: avatarTopPosition),
@@ -137,9 +140,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(data['nama'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6E7E96))),
+                Text(data['nama'] ?? 'Pengguna', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF6E7E96))),
                 const SizedBox(height: 2),
-                Text('@${data['username']}', style: TextStyle(fontSize: 16, color: const Color(0xFF6E7E96).withOpacity(0.9))),
+                Text('@${data['username'] ?? '-'}', style: TextStyle(fontSize: 16, color: const Color(0xFF6E7E96).withOpacity(0.9))),
                 const SizedBox(height: 14),
 
                 _isEditing
@@ -164,9 +167,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ProfileStatColumn(value: "–", label: 'Catatan'),
+                    ProfileStatColumn(
+                        value: auth.isLoadingStats ? "..." : auth.totalCatatan.toString(),
+                        label: 'Catatan'
+                    ),
                     const SizedBox(width: 40),
-                    ProfileStatColumn(value: "–", label: 'Suka'),
+                    ProfileStatColumn(
+                        value: auth.isLoadingStats ? "..." : auth.totalSuka.toString(),
+                        label: 'Suka'
+                    ),
                   ],
                 ),
 

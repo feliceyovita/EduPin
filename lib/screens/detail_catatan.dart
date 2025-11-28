@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -28,7 +29,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   // STATUS VARIABLES
   bool pinned = false;
   bool liked = false;
-  bool _isDownloading = false; // Menandakan sedang proses download atau tidak
+  bool _isDownloading = false;
 
   OverlayEntry? _overlayEntry;
 
@@ -41,6 +42,8 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   void initState() {
     super.initState();
     _noteFuture = NotesService().getNoteById(widget.noteId);
+
+    _checkLikeStatus();
   }
 
   @override
@@ -49,9 +52,63 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     super.dispose();
   }
 
-  // ==========================================
-  // LOGIKA OVERLAY (TOAST CUSTOM)
-  // ==========================================
+  Future<void> _checkLikeStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('notes')
+          .doc(widget.noteId)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        List likesArr = doc.data()!['likes'] ?? [];
+        if (mounted) {
+          setState(() {
+            liked = likesArr.contains(user.uid);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error checking like status: $e");
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showTopOverlay("Silakan login untuk menyukai catatan");
+      return;
+    }
+
+    setState(() {
+      liked = !liked;
+    });
+
+    try {
+      final docRef = FirebaseFirestore.instance.collection('notes').doc(widget.noteId);
+
+      if (liked) {
+        await docRef.update({
+          'likes': FieldValue.arrayUnion([user.uid])
+        });
+        debugPrint("❤️ Liked (Saved to DB)");
+      } else {
+        await docRef.update({
+          'likes': FieldValue.arrayRemove([user.uid])
+        });
+        debugPrint("💔 Unliked (Removed from DB)");
+      }
+    } catch (e) {
+      debugPrint("Gagal update like: $e");
+      if (mounted) {
+        setState(() => liked = !liked);
+        _showTopOverlay("Gagal memproses like. Cek koneksi.");
+      }
+    }
+  }
+
   void _removeOverlayIfAny() {
     _overlayEntry?.remove();
     _overlayEntry = null;
@@ -115,22 +172,18 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     Future.delayed(duration, _removeOverlayIfAny);
   }
 
-  // ==========================================
-  // LOGIKA DOWNLOAD GAMBAR (VERSI GAL)
-  // ==========================================
   Future<void> _downloadImages(List<String> imageUrls) async {
     if (imageUrls.isEmpty) {
       _showTopOverlay("Tidak ada gambar untuk diunduh");
       return;
     }
 
-    // 1. Cek Permission menggunakan Gal
     try {
       bool hasAccess = await Gal.hasAccess();
       if (!hasAccess) {
         await Gal.requestAccess();
         hasAccess = await Gal.hasAccess();
-        if (!hasAccess) return; // Jika user tetap menolak, berhenti.
+        if (!hasAccess) return;
       }
     } catch (e) {
       debugPrint("Error checking permission: $e");
@@ -138,7 +191,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
     setState(() => _isDownloading = true);
 
-    // Tampilkan Loading Dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -151,7 +203,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
     try {
       for (var url in imageUrls) {
-        // 2. Ambil data bytes gambar dari URL
         final response = await http.get(Uri.parse(url));
 
         if (response.statusCode == 200) {
@@ -166,7 +217,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
       debugPrint("Error downloading: $e");
     } finally {
       if (mounted) {
-        Navigator.pop(context); // Tutup dialog loading
+        Navigator.pop(context);
         setState(() => _isDownloading = false);
 
         if (successCount > 0) {
@@ -179,8 +230,9 @@ class _NoteDetailPageState extends State<NoteDetailPage>
       }
     }
   }
-// ==========================================
-  // BOTTOM SHEET DINAMIS (DATA REAL DARI DATABASE)
+
+  // ==========================================
+  // BOTTOM SHEET PIN
   // ==========================================
   void _showPinSheet() {
     showModalBottomSheet(
@@ -208,7 +260,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // HEADER ... (sama seperti sebelumnya)
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -228,9 +279,8 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               ),
               const SizedBox(height: 24),
 
-              // --- BAGIAN PENTING: STREAM BUILDER ---
               StreamBuilder<QuerySnapshot>(
-                stream: NotesService().streamKoleksi(), // Ambil daftar papan
+                stream: NotesService().streamKoleksi(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator(color: Colors.white));
@@ -246,22 +296,18 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                     );
                   }
 
-                  // TAMPILKAN LIST PAPAN
                   return Column(
                     children: boards.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
-                      final namaPapan = data['name'] ?? 'Tanpa Nama'; // Ambil nama asli dari DB (misal: "belajar uts")
+                      final namaPapan = data['name'] ?? 'Tanpa Nama';
 
                       return Material(
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () async {
-                            Navigator.pop(ctx); // Tutup sheet
+                            Navigator.pop(ctx);
                             try {
-                              // --- BAGIAN KUNCI ---
-                              // Simpan pakai variabel `namaPapan` (dinamis), JANGAN tulis manual "Materi UTS"
                               await NotesService().simpanKePin(widget.noteId, namaPapan);
-
                               setState(() => pinned = true);
                               _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
                             } catch (e) {
@@ -275,7 +321,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  // Gambar ikon folder sementara
                                   child: Container(
                                     width: 48, height: 48, color: Colors.white24,
                                     child: const Icon(Icons.folder, color: Colors.white),
@@ -283,7 +328,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: Text(namaPapan, // Tampilkan nama papan
+                                  child: Text(namaPapan,
                                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white)),
                                 ),
                               ],
@@ -297,7 +342,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               ),
 
               const SizedBox(height: 24),
-              // TOMBOL BUAT BARU ... (sama seperti sebelumnya)
               GestureDetector(
                 onTap: () {
                   Navigator.pop(ctx);
@@ -334,7 +378,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     return FutureBuilder<NoteDetail>(
       future: _noteFuture,
       builder: (context, snapshot) {
-        // 1. Loading State
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: Color(0xFFEFF6FF),
@@ -342,7 +385,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           );
         }
 
-        // 2. Error State
         if (snapshot.hasError) {
           return Scaffold(
             backgroundColor: const Color(0xFFEFF6FF),
@@ -355,7 +397,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           );
         }
 
-        // 3. Data Ready State
         if (!snapshot.hasData) {
           return const Scaffold(body: Center(child: Text("Data tidak ditemukan")));
         }
@@ -368,7 +409,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           vertical: 12,
         );
 
-        // ---------- HEADER ----------
         final header = Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -432,7 +472,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
                 if (pinned) _showPinSheet();
               },
             ),
-            // TOMBOL DOWNLOAD (SUDAH DIPERBAIKI)
+            // TOMBOL DOWNLOAD
             ActionIconButton(
               icon: _isDownloading
                   ? Icons.hourglass_empty
@@ -451,12 +491,13 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               onTap: () => context.push('/report', extra: d),
             ),
             const Spacer(),
-            // TOMBOL LIKE
+
+            // 3. TOMBOL LIKE
             ActionIconButton(
               icon: liked ? Icons.favorite : Icons.favorite_border,
               tooltip: 'Suka',
               toggled: liked,
-              onTap: () => setState(() => liked = !liked),
+              onTap: () => _toggleLike(),
             ),
           ],
         );
@@ -481,7 +522,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           ],
         );
 
-        // ---------- MAIN CARD ----------
         final mainCard = SectionCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,7 +537,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           ),
         );
 
-        // ---------- PUBLISHER CARD ----------
         final publisherCard = GestureDetector(
           onTap: () {
             context.push('/profile_user', extra: d.publisher);
@@ -505,7 +544,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           child: PublisherCard(p: d.publisher),
         );
 
-        // ---------- SCAFFOLD RETURN ----------
         return Scaffold(
           backgroundColor: const Color(0xFFEFF6FF),
           appBar: AppBar(
