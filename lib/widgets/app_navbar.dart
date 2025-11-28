@@ -30,7 +30,7 @@ class AppNavBar extends StatelessWidget {
           label: "Beranda",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.push_pin_outlined),
+          icon: Icon(Icons.dashboard),
           label: "Papan",
         ),
         BottomNavigationBarItem(

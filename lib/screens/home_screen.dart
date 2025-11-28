@@ -21,48 +21,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // HEADER
-        Container(
-          width: double.infinity,
-          color: Colors.blue,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const AppHeader(),
-
-              // SEARCH BAR
-              Center(
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.9,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(9),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
-                    ),
-                    child: TextField(
-                      onChanged: (value) {
-                        setState(() => searchQuery = value.toLowerCase());
-                      },
-                      decoration: const InputDecoration(
-                        hintText: "Cari catatan, mata pelajaran...",
-                        border: InputBorder.none,
-                        icon: Icon(Icons.search),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
+        AppHeader(
+          hintText: "Cari catatan, mata pelajaran...",
+          onSearchChanged: (value) {
+            setState(() => searchQuery = value.toLowerCase());
+          },
         ),
 
         // MAIN CONTENT

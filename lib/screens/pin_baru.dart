@@ -12,7 +12,7 @@ class PinBaruScreen extends StatefulWidget {
 class _PinBaruScreenState extends State<PinBaruScreen> {
   final _titleC = TextEditingController();
   bool _isFormValid = false;
-  bool _isLoading = false; // Variabel untuk status loading
+  bool _isLoading = false;
 
   OverlayEntry? _overlayEntry;
 
@@ -34,43 +34,38 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
   }
 
   // ======================================================
-  // FUNGSI SIMPAN KE DATABASE (SUDAH DIPERBAIKI)
+  // FUNGSI SIMPAN KE DATABASE
   // ======================================================
   Future<void> _onSimpan() async {
     final title = _titleC.text.trim();
     if (title.isEmpty) return;
 
-    // 1. Mulai Loading
     setState(() => _isLoading = true);
 
     try {
-      // 2. Panggil Service Firebase
       await NotesService().buatPapanBaru(title);
 
-      // 3. Jika Sukses, Tampilkan Overlay
       if (mounted) {
         _showTopOverlay('Koleksi "$title" berhasil dibuat');
 
-        // Beri jeda 1.5 detik agar user sempat baca notifikasi, lalu kembali
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
-            context.pop(); // Kembali ke halaman sebelumnya
+            context.pop();
           }
         });
       }
     } catch (e) {
-      // 4. Jika Gagal
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Gagal membuat papan: $e")),
         );
-        setState(() => _isLoading = false); // Matikan loading biar bisa coba lagi
+        setState(() => _isLoading = false);
       }
     }
   }
 
   // ======================================================
-  // LOGIKA OVERLAY (CUSTOM TOAST)
+  // LOGIKA OVERLAY
   // ======================================================
   void _removeOverlayIfAny() {
     _overlayEntry?.remove();
@@ -137,7 +132,6 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Definisi border untuk textfield
     final inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
@@ -163,12 +157,10 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: FilledButton.icon(
-              // Logika Tampilan Tombol: Kalau loading tampilkan putaran, kalau tidak tampilkan icon save
               icon: _isLoading
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.save, size: 18),
               label: Text(_isLoading ? 'Menyimpan...' : 'Simpan'),
-              // Matikan tombol jika form tidak valid ATAU sedang loading
               onPressed: (_isFormValid && !_isLoading) ? _onSimpan : null,
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF2563EB),
@@ -185,19 +177,21 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Gambar placeholder
+              // --- GAMBAR ASSET (KEMBALI KE ASAL) ---
               Center(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/images/sample_note.jpeg', // Pastikan gambar ini ada di assets
-                    width: 150,
+                    'assets/images/PapanBaru.jpg', // Pastikan path ini benar
+                    width: 100,
                     height: 100,
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              // --------------------------------------
+
+              const SizedBox(height: 24),
 
               // Judul Input
               const Text(
@@ -207,12 +201,12 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
               const SizedBox(height: 6),
               TextField(
                 controller: _titleC,
-                autofocus: true, // Keyboard langsung muncul
-                enabled: !_isLoading, // Disable input saat loading
+                autofocus: true,
+                enabled: !_isLoading,
                 decoration: InputDecoration(
                   hintText: 'Contoh: Kriptografi',
                   prefixIcon: const Icon(
-                    Icons.file_copy_outlined,
+                    Icons.edit_outlined,
                     color: Color(0xFF2563EB),
                   ),
                   border: inputBorder,
