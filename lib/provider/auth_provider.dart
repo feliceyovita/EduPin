@@ -262,4 +262,21 @@ class AuthProvider with ChangeNotifier {
     await _authService.updateUserData(newData);
     await loadUser();
   }
+
+  Future<void> updateProfilePhoto(String photoUrl) async {
+    if (currentUser == null) return;
+
+    try {
+      await _firestore.collection('users').doc(currentUser!.uid).update({
+        'photoUrl': photoUrl,
+      });
+
+      await currentUser!.updatePhotoURL(photoUrl);
+
+      await loadUserProfile();
+    } catch (e) {
+      debugPrint("Gagal update foto profile: $e");
+      rethrow;
+    }
+  }
 }

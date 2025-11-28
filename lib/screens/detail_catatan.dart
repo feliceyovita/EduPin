@@ -541,7 +541,10 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           onTap: () {
             context.push('/profile_user', extra: d.publisher);
           },
-          child: PublisherCard(p: d.publisher),
+          child: PublisherCard(
+            p: d.publisher,
+            authorId: d.authorId,
+          ),
         );
 
         return Scaffold(
