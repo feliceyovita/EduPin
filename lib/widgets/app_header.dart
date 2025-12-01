@@ -6,12 +6,15 @@ class AppHeader extends StatelessWidget {
   final String hintText;
   final bool showSearchBar;
 
+  final Widget? customTitle;
+
   const AppHeader({
     super.key,
     this.onSearchChanged,
     this.searchController,
     this.hintText = "Cari...",
     this.showSearchBar = true,
+    this.customTitle, // Tambahkan di constructor
   });
 
   @override
@@ -19,8 +22,8 @@ class AppHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(
-        top: 45, // Jarak status bar
-        bottom: 15,
+        top: 45,
+        bottom: 20,
         left: 20,
         right: 20,
       ),
@@ -31,28 +34,29 @@ class AppHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Image.asset(
-                "assets/images/logo.png",
-                width: 28,
-                height: 28,
-                errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.school, color: Colors.white),
+          customTitle ??
+              Row(
+                children: [
+                  Image.asset(
+                    "assets/images/logo.png",
+                    width: 28,
+                    height: 28,
+                    errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.school, color: Colors.white),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "EduPin",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              const Text(
-                "EduPin",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
 
-          // 2. SEARCH BAR (KONDISIONAL)
+          // 2. SEARCH BAR
           if (showSearchBar) ...[
             const SizedBox(height: 10),
             Container(
@@ -70,7 +74,7 @@ class AppHeader extends StatelessWidget {
               ),
               child: TextField(
                 controller: searchController,
-                onChanged: onSearchChanged, // Lempar input ke parent
+                onChanged: onSearchChanged,
                 decoration: InputDecoration(
                   hintText: hintText,
                   hintStyle: TextStyle(color: Colors.grey.shade400),

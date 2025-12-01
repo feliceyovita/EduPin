@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../services/catatan_service.dart';
 import '../models/note_details.dart';
 import '../widgets/pin_card.dart';
+import '../widgets/app_header.dart';
 
 class PapanDetailScreen extends StatefulWidget {
   final String boardName;
@@ -14,7 +15,6 @@ class PapanDetailScreen extends StatefulWidget {
 }
 
 class _PapanDetailScreenState extends State<PapanDetailScreen> {
-  // Controller search (biar ada visualnya dulu)
   final _searchC = TextEditingController();
 
   @override
@@ -26,77 +26,35 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Samakan warna background
+      backgroundColor: Colors.grey[100],
       body: CustomScrollView(
         slivers: [
           // ===============================================
-          // 1. HEADER (SAMA PERSIS DENGAN PAPAN SCREEN)
+          // 1. HEADER MENGGUNAKAN WIDGET APPHEADER
           // ===============================================
           SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              color: Colors.blue,
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: AppHeader(
+              hintText: "Cari di papan ini...",
+              searchController: _searchC,
+
+              customTitle: Row(
                 children: [
-                  const SizedBox(height: 35), // Jarak status bar
-
-                  // Baris Atas: Tombol Back + Judul Papan
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      children: [
-                        // GANTI LOGO JADI TOMBOL BACK
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                          onPressed: () => context.pop(),
-                        ),
-                        const SizedBox(width: 5),
-
-                        Expanded(
-                          child: Text(
-                            widget.boardName,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                    onPressed: () => context.pop(),
                   ),
-
-                  const SizedBox(height: 10),
-
-                  // SEARCH BAR (Sama persis)
-                  Center(
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(9),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            )
-                          ],
-                        ),
-                        child: TextField(
-                          controller: _searchC,
-                          decoration: const InputDecoration(
-                            hintText: "Cari di papan ini...",
-                            border: InputBorder.none,
-                            icon: Icon(Icons.search),
-                          ),
-                        ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      widget.boardName, // Nama Papan
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -104,20 +62,15 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
             ),
           ),
 
-          // ===============================================
-          // 2. ISI KONTEN (PIN CARD / CATATAN)
-          // ===============================================
           FutureBuilder<List<NoteDetail>>(
             future: NotesService().getNotesInBoard(widget.boardName),
             builder: (context, snapshot) {
-              // A. Loading
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
 
-              // B. Error
               if (snapshot.hasError) {
                 return SliverToBoxAdapter(
                   child: Padding(
@@ -129,7 +82,6 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
 
               final notes = snapshot.data ?? [];
 
-              // C. Kosong
               if (notes.isEmpty) {
                 return const SliverFillRemaining(
                   child: Center(
@@ -145,21 +97,19 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
                 );
               }
 
-              // D. Ada Data -> Tampilkan Grid PIN CARD
               return SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
                         (context, index) {
                       final note = notes[index];
-                      // PANGGIL WIDGET DARI HOME
                       return PinCard(data: note);
                     },
                     childCount: notes.length,
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    mainAxisExtent: 370, // Tinggi kartu disamakan dengan Home
+                    mainAxisExtent: 370,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
