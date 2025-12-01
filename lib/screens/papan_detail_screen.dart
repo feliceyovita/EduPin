@@ -30,7 +30,7 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
       body: CustomScrollView(
         slivers: [
           // ===============================================
-          // 1. HEADER (SAMA PERSIS DENGAN PAPAN SCREEN)
+          // 1. HEADER
           // ===============================================
           SliverToBoxAdapter(
             child: Container(
@@ -71,7 +71,7 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
 
                   const SizedBox(height: 10),
 
-                  // SEARCH BAR (Sama persis)
+                  // SEARCH BAR
                   Center(
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width * 0.9,
@@ -105,7 +105,7 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
           ),
 
           // ===============================================
-          // 2. ISI KONTEN (PIN CARD / CATATAN)
+          // 2. ISI KONTEN (RESPONSIF GRID)
           // ===============================================
           FutureBuilder<List<NoteDetail>>(
             future: NotesService().getNotesInBoard(widget.boardName),
@@ -145,24 +145,37 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
                 );
               }
 
-              // D. Ada Data -> Tampilkan Grid PIN CARD
+              // D. Ada Data -> Tampilkan Grid (RESPONSIF)
               return SliverPadding(
                 padding: const EdgeInsets.all(16),
-                sliver: SliverGrid(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      final note = notes[index];
-                      // PANGGIL WIDGET DARI HOME
-                      return PinCard(data: note);
-                    },
-                    childCount: notes.length,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisExtent: 370, // Tinggi kartu disamakan dengan Home
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
+                // --- PAKAI SliverLayoutBuilder AGAR BISA HITUNG LEBAR LAYAR ---
+                sliver: SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    // Logic: Lebar ideal kartu sekitar 200px.
+                    // Jika layar 400px (HP Portrait) -> 2 Kolom
+                    // Jika layar 800px (HP Landscape) -> 4 Kolom
+                    double itemWidth = 200;
+                    int crossAxisCount = (constraints.crossAxisExtent / itemWidth).floor();
+
+                    // Pastikan minimal 2 kolom
+                    if (crossAxisCount < 2) crossAxisCount = 2;
+
+                    return SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          final note = notes[index];
+                          return PinCard(data: note);
+                        },
+                        childCount: notes.length,
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount, // Gunakan hasil hitungan
+                        mainAxisExtent: 370, // Tinggi kartu tetap
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                    );
+                  },
                 ),
               );
             },

@@ -196,25 +196,49 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         final actions = Row(
           children: [
             // --- TOMBOL PIN (UPDATED) ---
+            // 1. TOMBOL PIN (LOGIKA TOGGLE LENGKAP)
             ActionIconButton(
-              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined, // Ikon berubah kalau dipin
-              tooltip: 'Simpan ke pin',
-              toggled: pinned,
-              onTap: () {
-                // PANGGIL WIDGET SHEET YANG BARU
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent, // Penting biar rounded corner kelihatan
-                  builder: (context) => SaveToPinSheet(
-                    noteId: widget.noteId,
-                    onSuccess: (namaPapan) {
-                      // Ini dijalankan kalau berhasil simpan di sheet
-                      setState(() => pinned = true);
-                      _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
-                    },
-                  ),
-                );
+              // Ubah ikon: Kalau pinned pakai ikon filled (terisi), kalau tidak pakai outline
+              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined,
+              tooltip: pinned ? 'Lepas dari pin' : 'Simpan ke pin',
+              toggled: pinned, // Ini yang bikin border jadi biru kalau aktif
+              onTap: () async {
+
+                if (pinned) {
+                  // --- SKENARIO UNPIN (HAPUS) ---
+                  // 1. Langsung update UI biar cepat (Optimistic UI)
+                  setState(() => pinned = false);
+
+                  try {
+                    // 2. Hapus dari database
+                    await NotesService().hapusPin(widget.noteId);
+
+                    // 3. Tampilkan pesan feedback
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Dihapus dari pin")),
+                    );
+                  } catch (e) {
+                    // Kalau gagal, balikin lagi statusnya
+                    setState(() => pinned = true);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Gagal menghapus: $e")),
+                    );
+                  }
+
+                } else {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => SaveToPinSheet(
+                      noteId: widget.noteId,
+                      onSuccess: (namaPapan) {
+                        setState(() => pinned = true);
+                        _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
+                      },
+                    ),
+                  );
+                }
               },
             ),
 

@@ -35,12 +35,11 @@ class _PapanScreenState extends State<PapanScreen> {
             child: AppHeader(
               hintText: "Cari Papan",
               searchController: _searchC,
-              // Nanti bisa tambah onSearchChanged di sini kalau mau filter
             ),
           ),
 
           // ===========================================
-          // 2. STREAM GRID PAPAN
+          // 2. STREAM GRID PAPAN (RESPONSIF)
           // ===========================================
           StreamBuilder<QuerySnapshot>(
             stream: NotesService().streamKoleksi(),
@@ -80,30 +79,44 @@ class _PapanScreenState extends State<PapanScreen> {
                 );
               }
 
-              // D. Ada Data -> Grid
+              // D. Ada Data -> Grid Responsif
+              // --- GUNAKAN SliverLayoutBuilder AGAR BISA MENGHITUNG LEBAR ---
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                sliver: SliverGrid(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      final doc = docs[index];
-                      final data = doc.data() as Map<String, dynamic>;
-                      final boardName = data['name'] ?? 'Tanpa Nama';
-                      final boardId = doc.id;
+                sliver: SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    // Logic hitung kolom:
+                    // Asumsi lebar ideal satu kartu adalah 160 pixel.
+                    // Jadi: Lebar Layar / 160 = Jumlah Kolom.
+                    final double itemWidth = 160;
+                    int crossAxisCount = (constraints.crossAxisExtent / itemWidth).floor();
 
-                      return _PapanCard(
-                        boardName: boardName,
-                        boardId: boardId,
-                      );
-                    },
-                    childCount: docs.length,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.75,
-                  ),
+                    // Pastikan minimal 2 kolom (biar gak aneh kalau layar sempit banget)
+                    if (crossAxisCount < 2) crossAxisCount = 2;
+
+                    return SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          final doc = docs[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          final boardName = data['name'] ?? 'Tanpa Nama';
+                          final boardId = doc.id;
+
+                          return _PapanCard(
+                            boardName: boardName,
+                            boardId: boardId,
+                          );
+                        },
+                        childCount: docs.length,
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount, // Gunakan hasil hitungan
+                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 20,
+                        childAspectRatio: 0.75, // Rasio tinggi kartu
+                      ),
+                    );
+                  },
                 ),
               );
             },
@@ -130,35 +143,7 @@ class _PapanCard extends StatelessWidget {
 
   const _PapanCard({required this.boardName, required this.boardId});
 
-  Future<Map<String, dynamic>> _getPapanInfo() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return {'image': null, 'count': 0};
-
-    final db = FirebaseFirestore.instance;
-    final pinQuery = await db
-        .collection('users')
-        .doc(user.uid)
-        .collection('pins')
-        .where('collection', isEqualTo: boardName)
-        .orderBy('savedAt', descending: true)
-        .get();
-
-    final count = pinQuery.docs.length;
-    String? imageUrl;
-
-    if (pinQuery.docs.isNotEmpty) {
-      final noteId = pinQuery.docs.first.data()['noteId'];
-      try {
-        final note = await NotesService().getNoteById(noteId);
-        if (note.imageAssets.isNotEmpty) {
-          imageUrl = note.imageAssets.first;
-        }
-      } catch (e) {
-        // ignore error
-      }
-    }
-    return {'image': imageUrl, 'count': count};
-  }
+  // --- HAPUS FUNGSI _getPapanInfo YANG LAMA (SUDAH DIGANTI SERVICE) ---
 
   void _showOptions(BuildContext context) {
     showModalBottomSheet(
@@ -172,20 +157,11 @@ class _PapanCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40, height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-              ),
+              Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
               Text("Opsi Papan: $boardName", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 20),
-
               ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.delete_outline, color: Colors.red),
-                ),
+                leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.delete_outline, color: Colors.red)),
                 title: const Text("Hapus Papan", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
                 subtitle: const Text("Papan dan semua isinya akan dihapus permanen"),
                 onTap: () {
@@ -207,31 +183,16 @@ class _PapanCard extends StatelessWidget {
         title: const Text("Hapus Papan?"),
         content: Text("Apakah Anda yakin ingin menghapus papan \"$boardName\"? Tindakan ini tidak dapat dibatalkan."),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal", style: TextStyle(color: Colors.grey))),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Menghapus papan...")),
-              );
-
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Menghapus papan...")));
               try {
                 await NotesService().hapusPapan(boardId, boardName);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Papan berhasil dihapus")),
-                  );
-                }
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Papan berhasil dihapus")));
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Gagal menghapus: $e")),
-                  );
-                }
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menghapus: $e")));
               }
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -244,12 +205,19 @@ class _PapanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _getPapanInfo(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: NotesService().streamPinsInBoard(boardName),
       builder: (context, snapshot) {
-        final imageUrl = snapshot.data?['image'];
-        final count = snapshot.data?['count'] ?? 0;
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        String? imageUrl;
+        int count = 0;
+        bool isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          final data = snapshot.data!.first;
+          count = data['count'];
+          imageUrl = data['image'];
+          isLoading = false;
+        }
 
         return GestureDetector(
           onTap: () {
@@ -261,9 +229,9 @@ class _PapanCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              AspectRatio(
-                aspectRatio: 1,
+              Expanded(
                 child: Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -280,12 +248,18 @@ class _PapanCard extends StatelessWidget {
                     child: isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : imageUrl != null
-                        ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _placeholder())
+                        ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _placeholder(),
+                    )
                         : _placeholder(),
                   ),
                 ),
               ),
+
               const SizedBox(height: 8),
+
               Text(
                 boardName,
                 textAlign: TextAlign.center,
@@ -293,8 +267,14 @@ class _PapanCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
+
               const SizedBox(height: 4),
-              Text("$count pin", textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+
+              Text(
+                  "$count pin",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13, color: Colors.grey)
+              ),
             ],
           ),
         );

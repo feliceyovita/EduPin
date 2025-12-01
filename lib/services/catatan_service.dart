@@ -82,7 +82,71 @@ class NotesService {
 
     return doc.exists;
   }
+  // ==========================================
+  // 11. HAPUS PIN (UNPIN)
+  // ==========================================
+  Future<void> hapusPin(String noteId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
 
+    // Hapus dokumen di subcollection 'pins'
+    await _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('pins')
+        .doc(noteId)
+        .delete();
+  }
+
+  // ==========================================
+  // 12. STREAM PIN PER PAPAN (UNTUK HITUNG JUMLAH & GAMBAR)
+  // ==========================================
+  Stream<List<Map<String, dynamic>>> streamPinsInBoard(String boardName) {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('pins')
+        .where('collection', isEqualTo: boardName)
+        .orderBy('savedAt', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      // Kita butuh proses asyncMap untuk mengambil gambar cover dari tiap noteId
+
+      List<Map<String, dynamic>> results = [];
+
+      // Ambil detail gambar untuk pin pertama saja (untuk cover)
+      String? coverImage;
+
+      if (snapshot.docs.isNotEmpty) {
+        final firstPin = snapshot.docs.first;
+        final noteId = firstPin['noteId'];
+        try {
+          final noteDoc = await _db.collection('notes').doc(noteId).get();
+          if (noteDoc.exists) {
+            final data = noteDoc.data() as Map<String, dynamic>;
+            final images = data['imageAssets'] as List?;
+            if (images != null && images.isNotEmpty) {
+              coverImage = images.first;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Return list sederhana berisi info cover & total count
+      // Sebenarnya kita cuma butuh 1 object yg berisi {count, image}
+      return [
+        {
+          'count': snapshot.docs.length,
+          'image': coverImage
+        }
+      ];
+    });
+  }
   // ==========================================
   // BAGIAN 3: KOLEKSI / PAPAN (BOARDS)
   // ==========================================
@@ -150,7 +214,7 @@ class NotesService {
     }
 
     return results;
-  } // <--- PENUTUP getNotesInBoard HARUSNYA DI SINI
+  }
 
   // ==========================================
   // 10. HAPUS PAPAN & ISI PIN-NYA
