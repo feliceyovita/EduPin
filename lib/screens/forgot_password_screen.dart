@@ -73,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           style: TextStyle(
                             fontSize: titleFontSize,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1E88E5),
+                            color: const Color(0xFF2782FF),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -204,7 +204,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
                                         colors: [
-                                          Color(0xFF2196F3),
+                                          Color(0xFF2782FF),
                                           Color(0xFF42A5F5),
                                         ],
                                       ),

@@ -9,7 +9,7 @@ class logoAppBgBlue extends StatelessWidget {
       width: 78,
       height: 78,
       decoration: BoxDecoration(
-        color: Colors.blue, // background biru
+        color: Color(0xFF2782FF), // background biru
         borderRadius: BorderRadius.circular(20), // sudut membulat
       ),
       child: Center(

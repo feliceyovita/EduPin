@@ -319,7 +319,7 @@ class _EditCatatanScreenState extends State<EditCatatanScreen> {
           children: [
             Icon(
               Icons.add_photo_alternate_outlined,
-              color: Colors.blue,
+              color: const Color(0xFF2782FF),
               size: 36,
             ),
             SizedBox(height: 8),

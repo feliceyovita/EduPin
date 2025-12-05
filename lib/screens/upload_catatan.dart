@@ -365,7 +365,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
                 height: 120,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue),
+                  border: Border.all(color: const Color(0xFF2782FF)),
                   color: Colors.white,
                 ),
                 child: const Icon(Icons.add_a_photo_outlined, color: Colors.grey),
@@ -449,7 +449,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
               color: Color(0xFFE0ECFF),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 18, color: Colors.blue),
+            child: Icon(icon, size: 18, color: const Color(0xFF2782FF)),
           ),
           const SizedBox(width: 12),
           Expanded(

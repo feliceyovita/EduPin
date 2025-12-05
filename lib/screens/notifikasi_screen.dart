@@ -13,8 +13,8 @@ class NotifikasiScreen extends StatelessWidget {
         children: [
           Container(
             width: double.infinity,
-            color: Colors.blue,
-            child: const AppHeader(),
+            color: const Color(0xFF2782FF),
+            child: const AppHeader(showSearchBar: false),
           ),
 
           Expanded(

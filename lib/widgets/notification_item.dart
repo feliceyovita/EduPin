@@ -41,7 +41,7 @@ class NotificationItem extends StatelessWidget {
               // Avatar
               CircleAvatar(
                 radius: 26,
-                backgroundColor: Colors.blue.shade400,
+                backgroundColor: Color(0xFF2782FF),
                 child: Text(
                   initial,
                   style: const TextStyle(

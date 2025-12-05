@@ -194,7 +194,19 @@ class _NoteDetailPageState extends State<NoteDetailPage>
             Row(children: [
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFEFF3FF), borderRadius: BorderRadius.circular(10)), child: Text(d.grade, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
               const SizedBox(width: 8),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFE5F2FF), borderRadius: BorderRadius.circular(10)), child: Text(d.subject, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+              GestureDetector(
+                onTap: () {
+                  context.go('/home', extra: {
+                    "type": "category",
+                    "value": d.subject,
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0xFFE5F2FF), borderRadius: BorderRadius.circular(10)),
+                  child: Text(d.subject, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              ),
             ])
           ]))
         ]);
@@ -251,7 +263,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           const SizedBox(height: 10),
           const Text('Tags', style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: d.tags.map((t) => PillTag(t)).toList()),
+          Wrap(spacing: 8, runSpacing: 8, children: d.tags.map((t) {return GestureDetector(onTap: () {context.go('/home', extra: {"type": "tag", "value": t,});}, child: PillTag(t),);}).toList(),),
         ]);
 
         final mainCard = SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     fontFamily: "AlbertSans",
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: const Color(0xFF2782FF),
                   ),
                 ),
                 const SizedBox(height: 6),

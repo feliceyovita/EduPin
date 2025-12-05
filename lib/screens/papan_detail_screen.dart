@@ -23,6 +23,8 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
     super.dispose();
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +37,7 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              color: Colors.blue,
+              color: const Color(0xFF2782FF),
               padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,8 +155,23 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
                         (context, index) {
                       final note = notes[index];
                       // PANGGIL WIDGET DARI HOME
-                      return PinCard(data: note);
-                    },
+                      return PinCard(
+                        data: note,
+                        onCategoryTap: (category) {
+                          context.pushReplacement('/home', extra: {
+                            "type": "category",
+                            "value": category,
+                          });
+                        },
+                        onTagTap: (tag) {
+                          context.pushReplacement('/home', extra: {
+                            "type": "tag",
+                            "value": tag,
+                          });
+                        },
+                      );
+
+                        },
                     childCount: notes.length,
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

@@ -61,7 +61,11 @@ final GoRouter router = GoRouter(
       routes: [
         GoRoute(
           path: '/home',
-          builder: (context, state) => const HomeScreen(),
+          builder: (context, state) {
+            return HomeScreen(
+              filterData: state.extra as Map<String, dynamic>?,
+            );
+          },
         ),
         GoRoute(
           path: '/papan',

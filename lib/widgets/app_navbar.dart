@@ -5,6 +5,7 @@ class AppNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
+
   const AppNavBar({
     super.key,
     required this.currentIndex,
@@ -17,6 +18,7 @@ class AppNavBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,
       currentIndex: currentIndex,
+      selectedItemColor: const Color(0xFF2782FF),
       onTap: (index) {
         if (index == 2) {
           showUploadSheet(context);
@@ -36,7 +38,7 @@ class AppNavBar extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(
             Icons.add_circle,
-            color: Colors.blue,
+            color: Color(0xFF2782FF),
           ),
           label: "Unggah",
         ),

@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: titleFontSize,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF1E88E5),
+                            color: const Color(0xFF2782FF),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade400),
+                                    borderSide: BorderSide(color: const Color(0xFF2782FF)),
                                   ),
                                 ),
                               ),
@@ -210,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade400),
+                                    borderSide: BorderSide(color: const Color(0xFF2782FF)),
                                   ),
                                 ),
                               ),
@@ -253,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       gradient: const LinearGradient(
                                         colors: [
                                           Color(0xFF2196F3),
-                                          Color(0xFF42A5F5),
+                                          Color(0xFF2782FF),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -293,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: const Text(
                                       'Daftar Sekarang',
                                       style: TextStyle(
-                                        color: Color(0xFF1E88E5),
+                                        color: const Color(0xFF2782FF),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),

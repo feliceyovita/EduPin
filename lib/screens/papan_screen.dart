@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/catatan_service.dart';
-import '../widgets/app_header.dart'; // <--- IMPORT WIDGET HEADER
+import '../widgets/app_header.dart';
 
 class PapanScreen extends StatefulWidget {
   const PapanScreen({super.key});
@@ -15,6 +15,14 @@ class PapanScreen extends StatefulWidget {
 
 class _PapanScreenState extends State<PapanScreen> {
   final _searchC = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchC.addListener(() {
+      setState(() {}); // supaya rebuild saat search text berubah
+    });
+  }
 
   @override
   void dispose() {
@@ -28,31 +36,22 @@ class _PapanScreenState extends State<PapanScreen> {
       backgroundColor: Colors.grey[100],
       body: CustomScrollView(
         slivers: [
-          // ===========================================
-          // 1. HEADER (SUDAH PAKAI WIDGET APPHEADER)
-          // ===========================================
           SliverToBoxAdapter(
             child: AppHeader(
               hintText: "Cari Papan",
               searchController: _searchC,
-              // Nanti bisa tambah onSearchChanged di sini kalau mau filter
             ),
           ),
 
-          // ===========================================
-          // 2. STREAM GRID PAPAN
-          // ===========================================
           StreamBuilder<QuerySnapshot>(
             stream: NotesService().streamKoleksi(),
             builder: (context, snapshot) {
-              // A. Loading
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
 
-              // B. Error
               if (snapshot.hasError) {
                 return SliverToBoxAdapter(
                   child: Padding(
@@ -64,8 +63,17 @@ class _PapanScreenState extends State<PapanScreen> {
 
               final docs = snapshot.data?.docs ?? [];
 
-              // C. Kosong
-              if (docs.isEmpty) {
+              // FILTER BERDASARKAN SEARCH
+              final searchText = _searchC.text.toLowerCase();
+              final filteredDocs = searchText.isEmpty
+                  ? docs
+                  : docs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final name = (data['name'] ?? '').toString().toLowerCase();
+                return name.contains(searchText);
+              }).toList();
+
+              if (filteredDocs.isEmpty) {
                 return const SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -73,20 +81,19 @@ class _PapanScreenState extends State<PapanScreen> {
                       children: [
                         Icon(Icons.folder_open, size: 64, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text("Belum ada papan koleksi.", style: TextStyle(color: Colors.grey)),
+                        Text("Tidak ada papan sesuai pencarian", style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
                 );
               }
 
-              // D. Ada Data -> Grid
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                      final doc = docs[index];
+                      final doc = filteredDocs[index];
                       final data = doc.data() as Map<String, dynamic>;
                       final boardName = data['name'] ?? 'Tanpa Nama';
                       final boardId = doc.id;
@@ -96,7 +103,7 @@ class _PapanScreenState extends State<PapanScreen> {
                         boardId: boardId,
                       );
                     },
-                    childCount: docs.length,
+                    childCount: filteredDocs.length,
                   ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -110,11 +117,9 @@ class _PapanScreenState extends State<PapanScreen> {
           ),
         ],
       ),
-
-      // FAB TAMBAH
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/pin_baru'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF2782FF),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -122,7 +127,7 @@ class _PapanScreenState extends State<PapanScreen> {
 }
 
 // ============================================
-// WIDGET KARTU PAPAN (SAMA SEPERTI SEBELUMNYA)
+// WIDGET KARTU PAPAN
 // ============================================
 class _PapanCard extends StatelessWidget {
   final String boardName;
@@ -153,9 +158,7 @@ class _PapanCard extends StatelessWidget {
         if (note.imageAssets.isNotEmpty) {
           imageUrl = note.imageAssets.first;
         }
-      } catch (e) {
-        // ignore error
-      }
+      } catch (e) {}
     }
     return {'image': imageUrl, 'count': count};
   }
@@ -179,7 +182,6 @@ class _PapanCard extends StatelessWidget {
               ),
               Text("Opsi Papan: $boardName", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 20),
-
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -214,23 +216,15 @@ class _PapanCard extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Menghapus papan...")),
-              );
-
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Menghapus papan...")));
               try {
                 await NotesService().hapusPapan(boardId, boardName);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Papan berhasil dihapus")),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Papan berhasil dihapus")));
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Gagal menghapus: $e")),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal menghapus: $e")));
                 }
               }
             },
@@ -252,12 +246,8 @@ class _PapanCard extends StatelessWidget {
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
         return GestureDetector(
-          onTap: () {
-            context.push('/papan_detail', extra: boardName);
-          },
-          onLongPress: () {
-            _showOptions(context);
-          },
+          onTap: () => context.push('/papan_detail', extra: boardName),
+          onLongPress: () => _showOptions(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -267,13 +257,7 @@ class _PapanCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      )
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),

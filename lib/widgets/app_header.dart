@@ -24,9 +24,17 @@ class AppHeader extends StatelessWidget {
         left: 20,
         right: 20,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.blue,
-      ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.topRight,
+            colors: [
+              Color(0xFF4FA0FF), // biru muda
+              Color(0xFF2A7EFF), // biru medium
+              Color(0xFF165EFC), // biru tua
+            ],
+          ),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

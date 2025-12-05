@@ -52,20 +52,20 @@ class ListKategori extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected ? Colors.grey.shade400 : Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.blue),
+                border: Border.all(color: Color(0xFF2782FF)),
               ),
               child: Row(
                 children: [
                   Icon(
                     icon,
                     size: 18,
-                    color: isSelected ? Colors.white : Colors.blue,
+                    color: isSelected ? Colors.white : Color(0xFF2782FF),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     item,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.blue,
+                      color: isSelected ? Colors.white : Color(0xFF2782FF),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
