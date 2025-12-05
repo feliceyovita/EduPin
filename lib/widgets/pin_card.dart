@@ -43,7 +43,6 @@ class _PinCardState extends State<PinCard> {
       likeCount += isLiked ? 1 : -1;
     });
   }
-
   void _togglePin() async {
     if (!pinned) {
       // BELUM DIPIN → tampilkan bottom sheet
@@ -54,7 +53,7 @@ class _PinCardState extends State<PinCard> {
         builder: (context) => SaveToPinSheet(
           noteId: widget.data.id,
           onSuccess: (namaPapan) async {
-            await NotesService().pinNote(widget.data.id, namaKoleksi: namaPapan);
+            await NotesService().simpanKePin(widget.data.id, namaPapan);
             if (mounted) setState(() => pinned = true);
             _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
           },
@@ -62,11 +61,13 @@ class _PinCardState extends State<PinCard> {
       );
     } else {
       // SUDAH DIPIN → unpin langsung
-      await NotesService().unpinNote(widget.data.id);
+      await NotesService().hapusPin(widget.data.id);
       if (mounted) setState(() => pinned = false);
       _showTopOverlay('Catatan dihapus dari pin');
     }
   }
+
+
 
   void _showTopOverlay(String message, {Duration duration = const Duration(seconds: 2)}) {
     _overlayEntry?.remove();

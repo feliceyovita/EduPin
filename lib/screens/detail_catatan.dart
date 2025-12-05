@@ -1,6 +1,4 @@
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -13,6 +11,8 @@ import '../widgets/action_icon_button.dart';
 import '../widgets/image_carousel.dart';
 import '../widgets/publisher_card.dart';
 import '../models/note_details.dart';
+
+// IMPORT WIDGET BARU
 import '../widgets/save_to_pin_sheet.dart';
 
 class NoteDetailPage extends StatefulWidget {
@@ -39,46 +39,12 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   void initState() {
     super.initState();
     _noteFuture = NotesService().getNoteById(widget.noteId);
-    _checkIfPinned();
-    _checkLikeStatus();
+    _checkIfPinned(); // Cek status pin awal
   }
 
   void _checkIfPinned() async {
     bool status = await NotesService().isPinned(widget.noteId);
     if (mounted) setState(() => pinned = status);
-  }
-
-  Future<void> _checkLikeStatus() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance.collection('notes').doc(widget.noteId).get();
-      if (doc.exists && doc.data() != null) {
-        List likesArr = doc.data()!['likes'] ?? [];
-        if (mounted) setState(() => liked = likesArr.contains(user.uid));
-      }
-    } catch (e) {
-      debugPrint("Error check like: $e");
-    }
-  }
-
-  Future<void> _toggleLike() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      _showTopOverlay("Silakan login dulu");
-      return;
-    }
-    setState(() => liked = !liked);
-    try {
-      final ref = FirebaseFirestore.instance.collection('notes').doc(widget.noteId);
-      if (liked) {
-        await ref.update({'likes': FieldValue.arrayUnion([user.uid])});
-      } else {
-        await ref.update({'likes': FieldValue.arrayRemove([user.uid])});
-      }
-    } catch (e) {
-      setState(() => liked = !liked);
-    }
   }
 
   @override
@@ -87,6 +53,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     super.dispose();
   }
 
+  // --- LOGIKA OVERLAY ---
   void _removeOverlayIfAny() {
     _overlayEntry?.remove();
     _overlayEntry = null;
@@ -129,29 +96,47 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     Future.delayed(duration, _removeOverlayIfAny);
   }
 
+// ==========================================
+  // LOGIKA DOWNLOAD GAMBAR (VERSI GAL - LENGKAP)
+  // ==========================================
   Future<void> _downloadImages(List<String> imageUrls) async {
     if (imageUrls.isEmpty) {
-      _showTopOverlay("Tidak ada gambar");
+      _showTopOverlay("Tidak ada gambar untuk diunduh");
       return;
     }
+
+    // 1. Cek Permission (Library Gal menanganinya dengan lebih baik)
     try {
       bool hasAccess = await Gal.hasAccess();
       if (!hasAccess) {
         await Gal.requestAccess();
-        if (!await Gal.hasAccess()) return;
+        hasAccess = await Gal.hasAccess();
+        if (!hasAccess) return; // User menolak izin
       }
     } catch (e) {
-      debugPrint("Perm error: $e");
+      debugPrint("Error checking permission: $e");
     }
 
     setState(() => _isDownloading = true);
-    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)));
+
+    // Tampilkan Loading Dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
 
     int successCount = 0;
+
     try {
       for (var url in imageUrls) {
+        // 2. Ambil data bytes gambar dari URL
         final response = await http.get(Uri.parse(url));
+
         if (response.statusCode == 200) {
+          // 3. Simpan ke Galeri menggunakan GAL
           await Gal.putImageBytes(
             Uint8List.fromList(response.bodyBytes),
             name: "EduPin_Img_${DateTime.now().millisecondsSinceEpoch}",
@@ -160,13 +145,20 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         }
       }
     } catch (e) {
-      debugPrint("DL error: $e");
+      debugPrint("Error downloading: $e");
     } finally {
+      // 4. Tutup Loading & Beri Notifikasi
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Tutup dialog loading
         setState(() => _isDownloading = false);
-        if (successCount > 0) _showTopOverlay("Berhasil menyimpan $successCount gambar");
-        else ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal mengunduh.")));
+
+        if (successCount > 0) {
+          _showTopOverlay("Berhasil menyimpan $successCount gambar ke Galeri");
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Gagal mengunduh gambar.")),
+          );
+        }
       }
     }
   }
@@ -187,6 +179,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         final d = snapshot.data!;
         final pagePad = EdgeInsets.symmetric(horizontal: MediaQuery.sizeOf(context).width * 0.06, vertical: 12);
 
+        // Header Section
         final header = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(d.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
@@ -194,37 +187,29 @@ class _NoteDetailPageState extends State<NoteDetailPage>
             Row(children: [
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFEFF3FF), borderRadius: BorderRadius.circular(10)), child: Text(d.grade, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
               const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () {
-                  context.go('/home', extra: {
-                    "type": "category",
-                    "value": d.subject,
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: const Color(0xFFE5F2FF), borderRadius: BorderRadius.circular(10)),
-                  child: Text(d.subject, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFE5F2FF), borderRadius: BorderRadius.circular(10)), child: Text(d.subject, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
             ])
           ]))
         ]);
 
+        // Action Buttons
         final actions = Row(
           children: [
+            // --- TOMBOL PIN (UPDATED) ---
             ActionIconButton(
-              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined,
+              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined, // Ikon berubah kalau dipin
               tooltip: 'Simpan ke pin',
               toggled: pinned,
               onTap: () {
+                // PANGGIL WIDGET SHEET YANG BARU
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: Colors.transparent, // Penting biar rounded corner kelihatan
                   builder: (context) => SaveToPinSheet(
                     noteId: widget.noteId,
                     onSuccess: (namaPapan) {
+                      // Ini dijalankan kalau berhasil simpan di sheet
                       setState(() => pinned = true);
                       _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
                     },
@@ -233,14 +218,11 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               },
             ),
 
-            if (d.izinkanUnduh) ...[
-              ActionIconButton(
-                icon: _isDownloading ? Icons.hourglass_empty : Icons.download_outlined,
-                tooltip: 'Download',
-                onTap: () => _downloadImages(d.imageAssets),
-              ),
-            ],
-
+            ActionIconButton(
+              icon: _isDownloading ? Icons.hourglass_empty : Icons.download_outlined,
+              tooltip: 'Download',
+              onTap: () => _downloadImages(d.imageAssets),
+            ),
             ActionIconButton(
               icon: Icons.flag_outlined,
               tooltip: 'Laporkan',
@@ -251,7 +233,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               icon: liked ? Icons.favorite : Icons.favorite_border,
               tooltip: 'Suka',
               toggled: liked,
-              onTap: () => _toggleLike(),
+              onTap: () => setState(() => liked = !liked),
             ),
           ],
         );
@@ -263,7 +245,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           const SizedBox(height: 10),
           const Text('Tags', style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: d.tags.map((t) {return GestureDetector(onTap: () {context.go('/home', extra: {"type": "tag", "value": t,});}, child: PillTag(t),);}).toList(),),
+          Wrap(spacing: 8, runSpacing: 8, children: d.tags.map((t) => PillTag(t)).toList()),
         ]);
 
         final mainCard = SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -275,7 +257,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
         final publisherCard = GestureDetector(
           onTap: () => context.push('/profile_user', extra: d.publisher),
-          child: PublisherCard(p: d.publisher, authorId: d.authorId),
+          child: PublisherCard(p: d.publisher),
         );
 
         return Scaffold(

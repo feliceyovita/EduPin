@@ -23,8 +23,6 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,7 +35,7 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              color: const Color(0xFF2782FF),
+              color: Colors.blue,
               padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,50 +138,62 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
                       children: [
                         Icon(Icons.notes, size: 64, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text("Belum ada catatan di sini.", style: TextStyle(color: Colors.grey)),
+                        Text(
+                          "Belum ada catatan di sini.",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
                 );
               }
 
-              // D. Ada Data -> Tampilkan Grid PIN CARD
+              // D. Ada Data -> Tampilkan Grid PIN CARD secara responsif
               return SliverPadding(
                 padding: const EdgeInsets.all(16),
-                sliver: SliverGrid(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      final note = notes[index];
-                      // PANGGIL WIDGET DARI HOME
-                      return PinCard(
-                        data: note,
-                        onCategoryTap: (category) {
-                          context.pushReplacement('/home', extra: {
-                            "type": "category",
-                            "value": category,
-                          });
-                        },
-                        onTagTap: (tag) {
-                          context.pushReplacement('/home', extra: {
-                            "type": "tag",
-                            "value": tag,
-                          });
-                        },
-                      );
+                sliver: SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    // Lebar ideal kartu sekitar 200 px
+                    double itemWidth = 200;
+                    int crossAxisCount = (constraints.crossAxisExtent / itemWidth).floor();
 
+                    if (crossAxisCount < 2) crossAxisCount = 2;
+
+                    return SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          final note = notes[index];
+                          return PinCard(
+                            data: note,
+                            onCategoryTap: (category) {
+                              context.pushReplacement('/home', extra: {
+                                "type": "category",
+                                "value": category,
+                              });
+                            },
+                            onTagTap: (tag) {
+                              context.pushReplacement('/home', extra: {
+                                "type": "tag",
+                                "value": tag,
+                              });
+                            },
+                          );
                         },
-                    childCount: notes.length,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisExtent: 370, // Tinggi kartu disamakan dengan Home
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
+                        childCount: notes.length,
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisExtent: 370,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                    );
+                  },
                 ),
               );
             },
           ),
+
         ],
       ),
     );
