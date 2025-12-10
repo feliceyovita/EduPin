@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../provider/catatan_provider.dart';
+import '../services/notification_service.dart';
 import '../widgets/section_card.dart';
 
 class UploadCatatanScreen extends StatefulWidget {
@@ -95,14 +97,14 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
 
     final provider = context.read<NotesProvider>();
 
-    // Loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    await provider.uploadNote(
+    // upload catatan
+    final noteRef = await provider.uploadNote(
       imageAssets: _selectedImages,
       title: _titleC.text.trim(),
       description: _descC.text.trim(),
@@ -114,12 +116,26 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
       izinkanUnduh: _izinkanUnduh,
     );
 
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    final currentUserId = currentUser.uid;
+    final displayName = currentUser.displayName ?? "User";
+
+    // --- notifikasi untuk user sendiri ---
+    await NotificationService().addNotification(
+      targetUserId: currentUserId,
+      message: "Anda membuat catatan baru: ${_titleC.text}",
+      type: "note_create",
+      actorId: currentUserId,
+    );
 
     if (mounted) {
       Navigator.pop(context); // tutup loading
-      context.pop(); // kembali
+      context.pop(); // kembali ke halaman sebelumnya
     }
   }
+
 
   // =========================
   // TAG HANDLER
@@ -485,5 +501,6 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
     );
+
   }
 }

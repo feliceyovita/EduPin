@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../services/catatan_service.dart'; // Import service untuk simpan ke database
+import '../services/catatan_service.dart';
+import '../services/notification_service.dart'; // Import service untuk simpan ke database
 
 class PinBaruScreen extends StatefulWidget {
   const PinBaruScreen({super.key});
@@ -43,15 +45,38 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // buat papan baru
       await NotesService().buatPapanBaru(title);
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+      final currentUserId = currentUser.uid;
+      final displayName = currentUser.displayName ?? "User";
 
       if (mounted) {
         _showTopOverlay('Koleksi "$title" berhasil dibuat');
 
+        // --- notifikasi untuk user sendiri ---
+        await NotificationService().addNotification(
+          targetUserId: currentUserId,
+          message: 'Anda menambahkan papan: "$title"',
+          type: "board_create",
+          boardId: "",
+          actorId: currentUserId,
+        );
+        final targetUserIds = ['adminUID1', 'adminUID2'];
+
+        for (var uid in targetUserIds) {
+          await NotificationService().addNotification(
+            targetUserId: uid,
+            message: '$displayName membuat papan: "$title"',
+            type: "board_create",
+            boardId: "",
+            actorId: currentUserId,
+          );
+        }
         Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            context.pop();
-          }
+          if (mounted) context.pop();
         });
       }
     } catch (e) {

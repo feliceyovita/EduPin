@@ -13,12 +13,15 @@ class NotesService {
   // ==========================================
 
   // 1. TAMBAH CATATAN BARU
-  Future<void> createNote(Map<String, dynamic> data) async {
+  Future<DocumentReference> createNote(Map<String, dynamic> data) async {
     if (!data.containsKey('createdAt')) {
       data['createdAt'] = FieldValue.serverTimestamp();
     }
-    await _db.collection("notes").add(data);
+
+    final docRef = await _db.collection("notes").add(data);
+    return docRef;
   }
+
 
   // 2. STREAM DAFTAR SEMUA CATATAN (HOME)
   Stream<List<NoteDetail>> streamNotes() {
@@ -197,5 +200,39 @@ class NotesService {
 
     // 3. Jalankan batch
     await batch.commit();
+  }
+  //likes
+  // cek apakah user sudah like
+  Future<bool> isLiked(String noteId) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    final doc = await _db
+        .collection('notes')
+        .doc(noteId)
+        .collection('likes')
+        .doc(user.uid)
+        .get();
+    return doc.exists;
+  }
+
+  // toggle like
+  Future<void> toggleLike(String noteId, bool like) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User belum login");
+
+    final likeRef = _db.collection('notes').doc(noteId).collection('likes').doc(user.uid);
+
+    if (like) {
+      await likeRef.set({'likedAt': DateTime.now()});
+    } else {
+      await likeRef.delete();
+    }
+  }
+
+  // ambil count like
+  Future<int> getLikeCount(String noteId) async {
+    final snapshot = await _db.collection('notes').doc(noteId).collection('likes').get();
+    return snapshot.docs.length;
   }
 }

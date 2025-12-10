@@ -12,7 +12,6 @@ import '../widgets/image_carousel.dart';
 import '../widgets/publisher_card.dart';
 import '../models/note_details.dart';
 
-// IMPORT WIDGET BARU
 import '../widgets/save_to_pin_sheet.dart';
 
 class NoteDetailPage extends StatefulWidget {
@@ -39,12 +38,18 @@ class _NoteDetailPageState extends State<NoteDetailPage>
   void initState() {
     super.initState();
     _noteFuture = NotesService().getNoteById(widget.noteId);
-    _checkIfPinned(); // Cek status pin awal
+    _checkIfPinned();
+    _checkIfLiked();
   }
 
   void _checkIfPinned() async {
     bool status = await NotesService().isPinned(widget.noteId);
     if (mounted) setState(() => pinned = status);
+  }
+
+  void _checkIfLiked() async {
+    bool status = await NotesService().isLiked(widget.noteId);
+    if (mounted) setState(() => liked = status);
   }
 
   @override
@@ -96,7 +101,7 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     Future.delayed(duration, _removeOverlayIfAny);
   }
 
-// ==========================================
+  // ==========================================
   // LOGIKA DOWNLOAD GAMBAR (VERSI GAL - LENGKAP)
   // ==========================================
   Future<void> _downloadImages(List<String> imageUrls) async {
@@ -105,13 +110,12 @@ class _NoteDetailPageState extends State<NoteDetailPage>
       return;
     }
 
-    // 1. Cek Permission (Library Gal menanganinya dengan lebih baik)
     try {
       bool hasAccess = await Gal.hasAccess();
       if (!hasAccess) {
         await Gal.requestAccess();
         hasAccess = await Gal.hasAccess();
-        if (!hasAccess) return; // User menolak izin
+        if (!hasAccess) return;
       }
     } catch (e) {
       debugPrint("Error checking permission: $e");
@@ -119,7 +123,6 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
     setState(() => _isDownloading = true);
 
-    // Tampilkan Loading Dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -132,11 +135,8 @@ class _NoteDetailPageState extends State<NoteDetailPage>
 
     try {
       for (var url in imageUrls) {
-        // 2. Ambil data bytes gambar dari URL
         final response = await http.get(Uri.parse(url));
-
         if (response.statusCode == 200) {
-          // 3. Simpan ke Galeri menggunakan GAL
           await Gal.putImageBytes(
             Uint8List.fromList(response.bodyBytes),
             name: "EduPin_Img_${DateTime.now().millisecondsSinceEpoch}",
@@ -147,9 +147,8 @@ class _NoteDetailPageState extends State<NoteDetailPage>
     } catch (e) {
       debugPrint("Error downloading: $e");
     } finally {
-      // 4. Tutup Loading & Beri Notifikasi
       if (mounted) {
-        Navigator.pop(context); // Tutup dialog loading
+        Navigator.pop(context);
         setState(() => _isDownloading = false);
 
         if (successCount > 0) {
@@ -171,7 +170,10 @@ class _NoteDetailPageState extends State<NoteDetailPage>
       future: _noteFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(backgroundColor: Color(0xFFEFF6FF), body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              backgroundColor: Color(0xFFEFF6FF),
+              body: Center(child: CircularProgressIndicator())
+          );
         }
         if (snapshot.hasError) return const Scaffold(body: Center(child: Text("Error")));
         if (!snapshot.hasData) return const Scaffold(body: Center(child: Text("Data tidak ada")));
@@ -185,9 +187,22 @@ class _NoteDetailPageState extends State<NoteDetailPage>
             Text(d.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Row(children: [
-              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFEFF3FF), borderRadius: BorderRadius.circular(10)), child: Text(d.grade, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+              Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0xFFEFF3FF), borderRadius: BorderRadius.circular(10)),
+                  child: Text(d.grade, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))
+              ),
               const SizedBox(width: 8),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: const Color(0xFFE5F2FF), borderRadius: BorderRadius.circular(10)), child: Text(d.subject, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+              GestureDetector(
+                onTap: () {
+                  context.go('/home?type=category&value=${d.subject}');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0xFFE5F2FF), borderRadius: BorderRadius.circular(10)),
+                  child: Text(d.subject, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              ),
             ])
           ]))
         ]);
@@ -195,45 +210,61 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         // Action Buttons
         final actions = Row(
           children: [
-            // --- TOMBOL PIN (UPDATED) ---
+            // --- TOMBOL PIN ---
             ActionIconButton(
-              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined, // Ikon berubah kalau dipin
+              icon: pinned ? Icons.push_pin : Icons.push_pin_outlined,
               tooltip: 'Simpan ke pin',
               toggled: pinned,
-              onTap: () {
-                // PANGGIL WIDGET SHEET YANG BARU
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent, // Penting biar rounded corner kelihatan
-                  builder: (context) => SaveToPinSheet(
-                    noteId: widget.noteId,
-                    onSuccess: (namaPapan) {
-                      // Ini dijalankan kalau berhasil simpan di sheet
-                      setState(() => pinned = true);
-                      _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
-                    },
-                  ),
-                );
+              onTap: () async {
+                if (!pinned) {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => SaveToPinSheet(
+                      noteId: widget.noteId,
+                      onSuccess: (namaPapan) async {
+                        await NotesService().simpanKePin(widget.noteId, namaPapan);
+                        setState(() => pinned = true);
+                        _showTopOverlay('Berhasil disimpan ke "$namaPapan"');
+                      },
+                    ),
+                  );
+                } else {
+                  await NotesService().hapusPin(widget.noteId);
+                  setState(() => pinned = false);
+                  _showTopOverlay('Catatan di-unpin');
+                }
               },
             ),
-
+            // --- TOMBOL DOWNLOAD (ENABLE/DISABLE) ---
             ActionIconButton(
               icon: _isDownloading ? Icons.hourglass_empty : Icons.download_outlined,
-              tooltip: 'Download',
-              onTap: () => _downloadImages(d.imageAssets),
+              tooltip: d.izinkanUnduh ? 'Download' : 'Download tidak diizinkan',
+              disabled: !d.izinkanUnduh || _isDownloading,
+              onTap: () async {
+                if (!d.izinkanUnduh) return;
+                setState(() => _isDownloading = true);
+                await _downloadImages(d.imageAssets);
+                setState(() => _isDownloading = false);
+              },
             ),
+            // --- TOMBOL LAPOR ---
             ActionIconButton(
               icon: Icons.flag_outlined,
               tooltip: 'Laporkan',
               onTap: () => context.push('/report', extra: d),
             ),
             const Spacer(),
+            // --- TOMBOL LIKE ---
             ActionIconButton(
               icon: liked ? Icons.favorite : Icons.favorite_border,
               tooltip: 'Suka',
               toggled: liked,
-              onTap: () => setState(() => liked = !liked),
+              onTap: () async {
+                setState(() => liked = !liked);
+                await NotesService().toggleLike(widget.noteId, liked);
+              },
             ),
           ],
         );
@@ -245,7 +276,11 @@ class _NoteDetailPageState extends State<NoteDetailPage>
           const SizedBox(height: 10),
           const Text('Tags', style: TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: d.tags.map((t) => PillTag(t)).toList()),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: d.tags.map((t) => GestureDetector(onTap: () {context.go('/home?type=tag&value=$t');}, child: PillTag(t),)).toList(),
+          ),
         ]);
 
         final mainCard = SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -256,13 +291,21 @@ class _NoteDetailPageState extends State<NoteDetailPage>
         ]));
 
         final publisherCard = GestureDetector(
-          onTap: () => context.push('/profile_user', extra: d.publisher),
-          child: PublisherCard(p: d.publisher),
+          onTap: () => context.push('/profile_user', extra: d.authorId),
+          child: PublisherCard(
+            authorId: d.authorId,
+          ),
         );
+
+
 
         return Scaffold(
           backgroundColor: const Color(0xFFEFF6FF),
-          appBar: AppBar(backgroundColor: const Color(0xFFEFF6FF), elevation: 0, leading: BackButton(onPressed: () => Navigator.of(context).maybePop())),
+          appBar: AppBar(
+              backgroundColor: const Color(0xFFEFF6FF),
+              elevation: 0,
+              leading: BackButton(onPressed: () => Navigator.of(context).maybePop())
+          ),
           body: SafeArea(
             child: Padding(
               padding: pagePad,

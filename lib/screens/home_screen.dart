@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/note_details.dart';
 import '../services/catatan_service.dart';
 import '../widgets/app_header.dart';
 import '../widgets/pin_card.dart';
 
 class HomeScreen extends StatefulWidget {
-  final Map<String, dynamic>? filterData; // untuk terima data dari detail tag/kategori
+  final String? filterType;  // "tag" atau "category"
+  final String? filterValue;
 
-  const HomeScreen({super.key, this.filterData});
+  const HomeScreen({
+    super.key,
+    this.filterType,
+    this.filterValue,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -16,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int selectedCategoryIndex = 0;
   String searchQuery = "";
-  bool isTagFilter = false; // untuk menandai filter berdasarkan tag
+  bool isTagFilter = false;
   final TextEditingController _searchController = TextEditingController();
 
   List<String> categories = ["Semua"];
@@ -24,27 +30,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.filterData != null) {
-      _applyFilter(widget.filterData!);
-    }
+    _applyFilterFromRoute();
   }
 
   @override
   void didUpdateWidget(covariant HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.filterData != oldWidget.filterData && widget.filterData != null) {
-      _applyFilter(widget.filterData!);
+    if (widget.filterValue != oldWidget.filterValue) {
+      _applyFilterFromRoute();
     }
   }
 
-  void _applyFilter(Map<String, dynamic> filter) {
-    final type = filter["type"];
-    final value = filter["value"];
+  void _applyFilterFromRoute() {
+    if (widget.filterType == null || widget.filterValue == null) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (type == "category") {
-        filterByCategory(value);
-      } else if (type == "tag") {
-        filterByTag(value);
+      if (widget.filterType == "category") {
+        filterByCategory(widget.filterValue!);
+      } else if (widget.filterType == "tag") {
+        filterByTag(widget.filterValue!);
       }
     });
   }
@@ -65,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onSearchChanged: (value) {
             setState(() {
               searchQuery = value.toLowerCase();
-              isTagFilter = false; // reset flag tag saat search manual
+              isTagFilter = false;
             });
           },
         ),
@@ -90,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Column(
                     children: [
                       const SizedBox(height: 10),
+
                       // ================= CATEGORY MENU =================
                       SizedBox(
                         height: 45,
@@ -99,14 +104,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemCount: categories.length,
                           itemBuilder: (_, i) {
                             final isSelected = i == selectedCategoryIndex;
+
                             return GestureDetector(
                               onTap: () {
-                                filterByCategory(categories[i]);
+                                context.go("/home?type=category&value=${categories[i]}");
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(right: 10),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: isSelected ? const Color(0xFF2782FF) : Colors.white,
                                   borderRadius: BorderRadius.circular(12),
@@ -124,7 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
+
                       const SizedBox(height: 10),
+
                       // ================= CONTENT =================
                       Expanded(
                         child: Padding(
@@ -136,13 +143,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               cols = cols.clamp(2, 5);
 
                               return filtered.isEmpty
-                                  ? const Center(
-                                child: Text("Belum ada catatan publik."),
-                              )
+                                  ? const Center(child: Text("Belum ada catatan publik."))
                                   : GridView.builder(
                                 itemCount: filtered.length,
-                                gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: cols,
                                   mainAxisExtent: 370,
                                   crossAxisSpacing: 12,
@@ -150,8 +154,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 itemBuilder: (_, i) => PinCard(
                                   data: filtered[i],
-                                  onCategoryTap: filterByCategory,
-                                  onTagTap: filterByTag,
+                                  onCategoryTap: (value) {
+                                    context.go("/home?type=category&value=$value");
+                                  },
+                                  onTagTap: (value) {
+                                    context.go("/home?type=tag&value=$value");
+                                  },
                                 ),
                               );
                             },
@@ -164,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -175,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedCategoryIndex = categories.indexOf(subject);
       searchQuery = "";
       _searchController.text = "";
-      isTagFilter = false; // reset tag filter
+      isTagFilter = false;
     });
   }
 
@@ -184,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
       searchQuery = tag.toLowerCase();
       _searchController.text = tag;
       selectedCategoryIndex = 0;
-      isTagFilter = true; // aktifkan flag tag
+      isTagFilter = true;
     });
   }
 
@@ -196,29 +204,18 @@ class _HomeScreenState extends State<HomeScreen> {
   List<NoteDetail> _applyFilters(List<NoteDetail> notes) {
     var result = notes.where((n) => n.publikasi == true).toList();
 
-    // filter berdasarkan kategori
     if (selectedCategoryIndex != 0 && !isTagFilter) {
-      result = result
-          .where((n) => n.subject == categories[selectedCategoryIndex])
-          .toList();
+      result = result.where((n) => n.subject == categories[selectedCategoryIndex]).toList();
     }
 
-    // filter berdasarkan search bar
     if (searchQuery.isNotEmpty) {
       if (isTagFilter) {
-        // cuma filter berdasarkan tag yang sama
-        result = result
-            .where((n) =>
-            n.tags.any((tag) => tag.toLowerCase() == searchQuery))
-            .toList();
+        result = result.where((n) => n.tags.any((tag) => tag.toLowerCase() == searchQuery)).toList();
       } else {
-        // filter biasa search bar
-        result = result
-            .where((n) =>
+        result = result.where((n) =>
         n.title.toLowerCase().contains(searchQuery) ||
             n.subject.toLowerCase().contains(searchQuery) ||
-            n.tags.any((tag) => tag.toLowerCase().contains(searchQuery)))
-            .toList();
+            n.tags.any((tag) => tag.toLowerCase().contains(searchQuery))).toList();
       }
     }
 

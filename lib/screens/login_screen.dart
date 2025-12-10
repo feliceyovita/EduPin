@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: const Text(
                                     'Lupa Password?',
                                     style:
-                                    TextStyle(color: Color(0xFF1E88E5)),
+                                    TextStyle(color: Color(0xFF2A7EFF)),
                                   ),
                                 ),
                               ),

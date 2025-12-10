@@ -62,9 +62,9 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/home',
           builder: (context, state) {
-            return HomeScreen(
-              filterData: state.extra as Map<String, dynamic>?,
-            );
+            final type = state.uri.queryParameters["type"];
+            final value = state.uri.queryParameters["value"];
+            return HomeScreen(filterType: type, filterValue: value);
           },
         ),
         GoRoute(
@@ -138,8 +138,8 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/profile_user',
       builder: (context, state) {
-        final publisherData = state.extra as Publisher;
-        return ProfileUserScreen(publisher: publisherData);
+        final authorId = state.extra as String;
+        return ProfileUserScreen(authorId: authorId);
       },
     ),
   ],

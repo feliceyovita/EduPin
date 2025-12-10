@@ -23,13 +23,14 @@ class PinCard extends StatefulWidget {
 class _PinCardState extends State<PinCard> {
   bool pinned = false;
   bool isLiked = false;
-  int likeCount = 156;
+  int likeCount = 0;
   OverlayEntry? _overlayEntry;
 
   @override
   void initState() {
     super.initState();
     _checkIfPinned();
+    _loadLikeStatus();
   }
 
   void _checkIfPinned() async {
@@ -37,15 +38,34 @@ class _PinCardState extends State<PinCard> {
     if (mounted) setState(() => pinned = status);
   }
 
-  void _toggleLike() {
+  void _loadLikeStatus() async {
+    bool liked = await NotesService().isLiked(widget.data.id);
+    int count = await NotesService().getLikeCount(widget.data.id);
+    if (mounted) setState(() {
+      isLiked = liked;
+      likeCount = count;
+    });
+  }
+
+  void _toggleLike() async {
     setState(() {
       isLiked = !isLiked;
       likeCount += isLiked ? 1 : -1;
     });
+
+    try {
+      await NotesService().toggleLike(widget.data.id, isLiked);
+    } catch (e) {
+      // rollback kalau gagal
+      setState(() {
+        isLiked = !isLiked;
+        likeCount += isLiked ? 1 : -1;
+      });
+    }
   }
+
   void _togglePin() async {
     if (!pinned) {
-      // BELUM DIPIN → tampilkan bottom sheet
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -60,14 +80,11 @@ class _PinCardState extends State<PinCard> {
         ),
       );
     } else {
-      // SUDAH DIPIN → unpin langsung
       await NotesService().hapusPin(widget.data.id);
       if (mounted) setState(() => pinned = false);
       _showTopOverlay('Catatan dihapus dari pin');
     }
   }
-
-
 
   void _showTopOverlay(String message, {Duration duration = const Duration(seconds: 2)}) {
     _overlayEntry?.remove();
@@ -198,7 +215,7 @@ class _PinCardState extends State<PinCard> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.blue.shade100),
                           ),
-                          child: Text("#$tag", style: const TextStyle(fontSize: 11, color: Colors.blue)),
+                          child: Text("#$tag", style: const TextStyle(fontSize: 11, color: Color(0xFF2A7EFF))),
                         ),
                       );
                     }).toList(),
@@ -208,7 +225,7 @@ class _PinCardState extends State<PinCard> {
                 Row(
                   children: [
                     Text(
-                      "by ${widget.data.publisher.name}",
+                      "by ${widget.data.publisher?.name ?? 'Unknown'}",
                       style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
                     ),
                     const Spacer(),

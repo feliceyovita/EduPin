@@ -17,8 +17,7 @@ class NotesProvider extends ChangeNotifier {
     return snap.data() ?? {};
   }
 
-  // ---------------- UPLOAD NOTE ----------------
-  Future<void> uploadNote({
+  Future<String> uploadNote({
     required List<File> imageAssets,
     required String title,
     required String description,
@@ -48,9 +47,7 @@ class NotesProvider extends ChangeNotifier {
         uploadedUrls.add(url);
       }
 
-      final imageUrl = uploadedUrls.isNotEmpty ? uploadedUrls.first : "";
-
-      await notesService.createNote({
+      final docRef = await notesService.createNote({
         "title": title,
         "description": description,
         "subject": subject,
@@ -59,19 +56,20 @@ class NotesProvider extends ChangeNotifier {
         "tags": tags,
         "publikasi": publikasi,
         "izinkanUnduh": izinkanUnduh,
-        "imageUrl": imageUrl,
+        "imageUrl": uploadedUrls.isNotEmpty ? uploadedUrls.first : "",
         "imageAssets": uploadedUrls,
         "createdAt": FieldValue.serverTimestamp(),
         "authorId": FirebaseAuth.instance.currentUser!.uid,
         "publisher": publisherData,
       });
+
+      return docRef.id;
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
 
-  // ---------------- UPDATE NOTE ----------------
   Future<void> updateNote({
     required String noteId,
     required String title,

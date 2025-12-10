@@ -37,7 +37,7 @@ class NoteDetail {
   final List<String> tags;
   final String imageUrl;
   final String authorId;
-  final Publisher publisher;
+  final Publisher? publisher;
   final List<String> imageAssets;
   final bool publikasi;
   final bool izinkanUnduh;
