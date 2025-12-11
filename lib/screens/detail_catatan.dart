@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:gal/gal.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/catatan_service.dart';
 import '../widgets/section_card.dart';
@@ -11,6 +12,7 @@ import '../widgets/action_icon_button.dart';
 import '../widgets/image_carousel.dart';
 import '../widgets/publisher_card.dart';
 import '../models/note_details.dart';
+import '../services/notification_service.dart';
 
 import '../widgets/save_to_pin_sheet.dart';
 
@@ -262,8 +264,25 @@ class _NoteDetailPageState extends State<NoteDetailPage>
               tooltip: 'Suka',
               toggled: liked,
               onTap: () async {
+                // 1. Update Tampilan
                 setState(() => liked = !liked);
+
+                // 2. Update Database
                 await NotesService().toggleLike(widget.noteId, liked);
+
+                // 3. KIRIM NOTIFIKASI
+                final currentUser = FirebaseAuth.instance.currentUser;
+
+                if (liked && currentUser != null && currentUser.uid != d.authorId) {
+
+                  await NotificationService().addNotification(
+                    targetUserId: d.authorId,
+                    message: 'menyukai pin Anda: "${d.title}"',
+                    type: 'like',
+                    noteId: widget.noteId,
+                    actorId: currentUser.uid,
+                  );
+                }
               },
             ),
           ],

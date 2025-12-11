@@ -10,18 +10,29 @@ class NotifikasiScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final uid = currentUser?.uid;
+
+    if (uid == null) {
+      return const Scaffold(
+        body: Center(child: Text("Silakan login terlebih dahulu")),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F5F9),
       body: Column(
         children: [
-          // header
+          // ============================
+          // HEADER BIRU
+          // ============================
           Container(
             width: double.infinity,
             color: const Color(0xFF2782FF),
             child: const AppHeader(showSearchBar: false),
           ),
+
+          // JUDUL HALAMAN
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 0, 0),
             child: Align(
@@ -37,7 +48,9 @@ class NotifikasiScreen extends StatelessWidget {
           ),
 
 
-          // daftar notifikasi
+          // ============================
+          // DAFTAR NOTIFIKASI
+          // ============================
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -47,27 +60,45 @@ class NotifikasiScreen extends StatelessWidget {
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                // 1. Loading State
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                // 2. Error State
+                if (!snapshot.hasData || snapshot.hasError) {
+                  return const Center(child: Text("Gagal memuat notifikasi"));
                 }
 
                 final docs = snapshot.data!.docs;
 
+                // 3. Empty State
                 if (docs.isEmpty) {
                   return const Center(child: Text("Belum ada notifikasi"));
                 }
 
+                // 4. List Notifikasi
                 return ListView.builder(
                   padding: const EdgeInsets.only(top: 5, bottom: 80),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final notifDoc = docs[index];
                     final notif = notifDoc.data() as Map<String, dynamic>;
-                    final String actorId = notif['actorId'];
+
+                    final String actorId = notif['actorId'] ?? "";
 
                     final timestamp = notif['timestamp']?.toDate() ?? DateTime.now();
+
+                    if (actorId.isEmpty) {
+                      return NotificationItem(
+                        initial: "?",
+                        message: notif['message'] ?? "",
+                        time: formatTime(timestamp),
+                        isNew: notif['isNew'] ?? false,
+                        profileUrl: null,
+                        notificationId: notifDoc.id,
+                      );
+                    }
 
                     return FutureBuilder<DocumentSnapshot>(
                       future: FirebaseFirestore.instance
@@ -86,16 +117,34 @@ class NotifikasiScreen extends StatelessWidget {
 
                         final userData = userSnap.data!.data() as Map<String, dynamic>?;
 
-                        final String name = userData?['nama'] ?? "User";
+                        String rawName = userData?['username'] ?? userData?['nama'] ?? "Seseorang";
+
+                        String displayName = rawName;
+                        if (displayName.contains('@')) {
+                          displayName = displayName.split('@')[0]; // Ambil sebelum @
+                          displayName = "@$displayName";
+                        }
+
+                        final String rawMsg = notif['message'] ?? "";
+                        final String fullMessage = "$displayName $rawMsg";
+
                         final String? photoUrl = userData?['photoUrl'];
 
+                        String initial = "?";
+                        if (displayName.isNotEmpty) {
+                          String cleanName = displayName.replaceAll('@', '');
+                          if (cleanName.isNotEmpty) {
+                            initial = cleanName[0].toUpperCase();
+                          }
+                        }
+
                         return NotificationItem(
-                          initial: name.isNotEmpty ? name[0].toUpperCase() : "?",
-                          message: notif['message'] ?? "",
+                          initial: initial,
+                          message: fullMessage,
                           time: formatTime(timestamp),
                           isNew: notif['isNew'] ?? false,
                           profileUrl: photoUrl,
-                          notificationId: notifDoc.id, // penting untuk markAsRead
+                          notificationId: notifDoc.id,
                         );
                       },
                     );
