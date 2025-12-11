@@ -115,16 +115,24 @@ class ProfileUserScreen extends StatelessWidget {
                           backgroundColor: Colors.white,
                           child: CircleAvatar(
                             radius: avatarInnerRadius,
-                            backgroundColor: Colors.grey.shade200,
+                            backgroundColor: (photoUrl.isEmpty)
+                                ? const Color(0xFF2A7EFF)  // background biru jika kosong
+                                : Colors.grey.shade200,
                             backgroundImage: (photoUrl.isNotEmpty && photoUrl.startsWith('http'))
                                 ? NetworkImage(photoUrl)
                                 : null,
                             child: (photoUrl.isEmpty)
-                                ? const Icon(Icons.person, size: 38, color: Colors.grey)
+                                ? Text(
+                              (displayName.isNotEmpty ? displayName[0].toUpperCase() : "?"),
+                              style: const TextStyle(
+                                fontSize: 32,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
                                 : null,
                           ),
                         ),
-
                         const SizedBox(height: 8),
 
                         Text(
@@ -380,23 +388,9 @@ class ProfileUserScreen extends StatelessWidget {
 
                   Row(
                     children: [
-                      Image.asset('assets/images/pin.png',
-                          width: 14, height: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 4),
-
-                      Text(
-                        '${note['pinCount']}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          fontFamily: kFontFamily,
-                        ),
-                      ),
-
                       const Spacer(),
-
                       Text(
-                        note['date'],
+                        note['date'] ?? '-',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade400,

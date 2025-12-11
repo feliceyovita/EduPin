@@ -491,27 +491,15 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Image.asset(
-                        'assets/images/pin.png',
-                        width: 14,
-                        height: 14,
-                        color: Colors.grey.shade600,
-                        errorBuilder: (_, __, ___) => Icon(Icons.push_pin, size: 14, color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(width: 4),
-                      Text('${note['pinCount'] ?? 0}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                            fontFamily: kFontFamily,
-                          )),
                       const Spacer(),
-                      Text(note['date'] ?? '-',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade400,
-                            fontFamily: kFontFamily,
-                          )),
+                      Text(
+                        note['date'] ?? '-',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade400,
+                          fontFamily: kFontFamily,
+                        ),
+                      ),
                     ],
                   ),
                   if (_isEditingNotes) ...[
