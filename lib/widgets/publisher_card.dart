@@ -31,6 +31,7 @@ class PublisherCard extends StatelessWidget {
           String displayName = p?.name ?? "";
           String displayInst = p?.institution ?? "";
           String? photoUrl = p?.avatarAsset;
+          String displayHandle = p?.handle ?? "";
 
           // ===== OVERWRITE DENGAN DATA FIREBASE JIKA ADA =====
           if (snapshot.hasData &&
@@ -41,6 +42,7 @@ class PublisherCard extends StatelessWidget {
             photoUrl = data['photoUrl'] ?? photoUrl;
             displayName = data['nama'] ?? displayName;
             displayInst = data['sekolah'] ?? displayInst;
+            displayHandle = data['username'] ?? displayHandle;
           }
 
           // ===== INISIAL NAMA =====
@@ -79,10 +81,11 @@ class PublisherCard extends StatelessWidget {
                       displayName,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    Text(
-                      p?.handle ?? "",
-                      style: const TextStyle(color: Colors.black54),
-                    ),
+                    if (displayHandle.isNotEmpty)
+                      Text(
+                        "@$displayHandle",
+                        style: const TextStyle(color: Colors.black54),
+                      ),
                     const SizedBox(height: 6),
                     Row(
                       children: [

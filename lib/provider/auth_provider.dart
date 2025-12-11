@@ -44,11 +44,29 @@ class AuthProvider with ChangeNotifier {
       await _firestore.collection('users').doc(currentUser!.uid).get();
 
       if (doc.exists) {
-        userProfile = doc.data() as Map<String, dynamic>;
+        Map<String, dynamic> firestoreData = doc.data() as Map<String, dynamic>;
+
+        userProfile = {
+          'uid': currentUser!.uid,
+          'email': firestoreData['email'] ?? currentUser!.email ?? '',
+          'nama': firestoreData['nama'] ?? currentUser!.displayName ?? '',
+          'username': firestoreData['username'] ?? '',
+          'sekolah': firestoreData['sekolah'] ?? '',
+          'photoUrl': firestoreData['photoUrl'] ?? currentUser!.photoURL,
+          'tanggalLahir': firestoreData['tanggalLahir'],
+        };
+      } else {
+        userProfile = {
+          'uid': currentUser!.uid,
+          'email': currentUser!.email ?? '',
+          'nama': currentUser!.displayName ?? '',
+          'username': '',
+          'sekolah': '',
+          'photoUrl': currentUser!.photoURL,
+        };
       }
 
       await loadUserStats();
-
     } catch (e) {
       debugPrint("Error loading profile: $e");
     }

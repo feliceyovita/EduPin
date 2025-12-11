@@ -8,11 +8,10 @@ import '../models/note_details.dart';
 const String kFontFamily = 'AlbertSans';
 
 class ProfileUserScreen extends StatelessWidget {
-  final String authorId; // <-- ini kunci utamanya
+  final String authorId;
 
   const ProfileUserScreen({super.key, required this.authorId});
 
-  // Stream untuk mengambil data user dari Firestore berdasarkan authorId
   Stream<DocumentSnapshot<Map<String, dynamic>>> getUserStream(String authorId) {
     return FirebaseFirestore.instance
         .collection('users')
@@ -76,16 +75,38 @@ class ProfileUserScreen extends StatelessWidget {
                 StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                   stream: getUserStream(authorId),
                   builder: (context, snapshot) {
-                    String? photoUrl;
-                    String name = "";
-                    String handle = "";
-
-                    if (snapshot.hasData && snapshot.data!.exists) {
-                      final data = snapshot.data!.data();
-                      photoUrl = data?['photoUrl'];
-                      name = data?['name'] ?? "";
-                      handle = data?['handle'] ?? "";
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
                     }
+
+                    if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+                      return const Text("User tidak ditemukan");
+                    }
+
+                    final data = snapshot.data!.data();
+
+                    // -------------------------------------------------
+                    // 1. LOGIKA NAMA
+                    // -------------------------------------------------
+                    String displayName = data?['nama'] ?? data?['name'] ?? "Tanpa Nama";
+
+                    if (displayName.isEmpty) {
+                      displayName = data?['username'] ?? "User";
+                    }
+
+                    // -------------------------------------------------
+                    // 2. LOGIKA USERNAME
+                    // -------------------------------------------------
+                    String rawUsername = data?['username'] ?? data?['handle'] ?? "";
+                    String displayHandle = "";
+
+                    if (rawUsername.contains('@')) {
+                      displayHandle = "@${rawUsername.split('@')[0]}";
+                    } else {
+                      displayHandle = rawUsername.startsWith('@') ? rawUsername : "@$rawUsername";
+                    }
+
+                    String photoUrl = data?['photoUrl'] ?? '';
 
                     return Column(
                       children: [
@@ -95,11 +116,11 @@ class ProfileUserScreen extends StatelessWidget {
                           child: CircleAvatar(
                             radius: avatarInnerRadius,
                             backgroundColor: Colors.grey.shade200,
-                            backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                            backgroundImage: (photoUrl.isNotEmpty && photoUrl.startsWith('http'))
                                 ? NetworkImage(photoUrl)
                                 : null,
-                            child: (photoUrl == null || photoUrl.isEmpty)
-                                ? const Icon(Icons.person, size: 38)
+                            child: (photoUrl.isEmpty)
+                                ? const Icon(Icons.person, size: 38, color: Colors.grey)
                                 : null,
                           ),
                         ),
@@ -107,19 +128,20 @@ class ProfileUserScreen extends StatelessWidget {
                         const SizedBox(height: 8),
 
                         Text(
-                          name,
+                          displayName,
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF6E7E96),
                             fontFamily: kFontFamily,
                           ),
+                          textAlign: TextAlign.center,
                         ),
 
                         const SizedBox(height: 2),
 
                         Text(
-                          handle,
+                          displayHandle,
                           style: TextStyle(
                             fontSize: 14,
                             color: const Color(0xFF6E7E96).withOpacity(0.9),
