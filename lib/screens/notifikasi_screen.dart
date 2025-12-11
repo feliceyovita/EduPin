@@ -22,6 +22,20 @@ class NotifikasiScreen extends StatelessWidget {
             color: const Color(0xFF2782FF),
             child: const AppHeader(showSearchBar: false),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 0, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Notifikasi",
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+
 
           // daftar notifikasi
           Expanded(
@@ -46,7 +60,7 @@ class NotifikasiScreen extends StatelessWidget {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(top: 16, bottom: 80),
+                  padding: const EdgeInsets.only(top: 5, bottom: 80),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final notifDoc = docs[index];
@@ -72,7 +86,7 @@ class NotifikasiScreen extends StatelessWidget {
 
                         final userData = userSnap.data!.data() as Map<String, dynamic>?;
 
-                        final String name = userData?['name'] ?? "User";
+                        final String name = userData?['nama'] ?? "User";
                         final String? photoUrl = userData?['photoUrl'];
 
                         return NotificationItem(
