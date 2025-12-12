@@ -860,14 +860,7 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                           );
 
                           await user!.reauthenticateWithCredential(credential);
-
-                          await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(user.uid)
-                              .delete();
-
-                          await user.delete();
-                          await FirebaseAuth.instance.signOut();
+                          await context.read<AuthProvider>().deleteUserAndAllDataFull(password);
 
                           if (context.mounted) {
                             context.read<AuthProvider>().signOut();

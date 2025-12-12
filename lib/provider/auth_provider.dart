@@ -268,7 +268,6 @@ class AuthProvider with ChangeNotifier {
     _user = null;
     notifyListeners();
   }
-
   Future<bool> deleteAccount({
     required String email,
     required String password,
@@ -281,6 +280,69 @@ class AuthProvider with ChangeNotifier {
         errorPrefix: 'Hapus akun gagal',
       );
 
+  Future<void> deleteUserAndAllDataFull(String password) async {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      await reauthenticateWithEmail(
+        email: currentUser!.email!,
+        password: password,
+      );
+      final notesSnapshot = await _firestore
+          .collection('notes')
+          .where('authorId', isEqualTo: uid)
+          .get();
+      for (var doc in notesSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      final allNotesSnapshot = await _firestore.collection('notes').get();
+      for (var doc in allNotesSnapshot.docs) {
+        final data = doc.data();
+        if (data['likes'] != null && data['likes'] is List) {
+          List likes = List.from(data['likes']);
+          if (likes.contains(uid)) {
+            likes.remove(uid);
+            await doc.reference.update({'likes': likes});
+          }
+        }
+      }
+      final commentsSnapshot = await _firestore
+          .collection('comments')
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      for (var doc in commentsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      final reportsSnapshot = await _firestore
+          .collection('reports')
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      for (var doc in reportsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      final notificationsSnapshot = await _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: uid)
+          .get();
+
+      for (var doc in notificationsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      await _firestore.collection('users').doc(uid).delete();
+      await deleteAccount(
+        email: currentUser!.email!,
+        password: password,
+      );
+
+      debugPrint('✅ Semua data user berhasil dihapus sepenuhnya.');
+    } catch (e) {
+      debugPrint('❌ Gagal hapus akun dan semua data: $e');
+      rethrow;
+    }
+  }
   Map<String, dynamic>? userData;
 
   Future<void> loadUser() async {
