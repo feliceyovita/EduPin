@@ -12,6 +12,35 @@ class ProfileUserScreen extends StatelessWidget {
 
   const ProfileUserScreen({super.key, required this.authorId});
 
+  // ======================================
+  // 🔥 TARUH FUNCTION INI DI SINI
+  // ======================================
+  Future<int> _countTotalLikes(String authorId) async {
+    debugPrint("CHECK AUTHOR ID: $authorId");
+    final notesQuery = await FirebaseFirestore.instance
+        .collection('notes')
+        .where('authorId', isEqualTo: authorId)
+        .get();
+
+    debugPrint("TOTAL NOTES FOUND: ${notesQuery.docs.length}");
+
+    int totalLikes = 0;
+
+    for (var note in notesQuery.docs) {
+      final likesSnapshot = await FirebaseFirestore.instance
+          .collection('notes')
+          .doc(note.id)
+          .collection('likes')
+          .get();
+
+      debugPrint("NOTE ${note.id} LIKE COUNT: ${likesSnapshot.docs.length}");
+      totalLikes += likesSnapshot.docs.length;
+    }
+
+    debugPrint("TOTAL LIKES FINAL: $totalLikes");
+    return totalLikes;
+  }
+
   Stream<DocumentSnapshot<Map<String, dynamic>>> getUserStream(String authorId) {
     return FirebaseFirestore.instance
         .collection('users')
@@ -166,34 +195,35 @@ class ProfileUserScreen extends StatelessWidget {
                 // ===============================
                 //        CATATAN & SUKA
                 // ===============================
-                StreamBuilder<QuerySnapshot>(
-                  stream: notesCollection
-                      .where('authorId', isEqualTo: authorId)
-                      .snapshots(),
+                FutureBuilder<int>(
+                  future: _countTotalLikes(authorId),
+
                   builder: (context, snapshot) {
-                    int noteCount = 0;
-                    int totalLikes = 0;
+                    final totalLikes = snapshot.data ?? 0;
 
-                    if (snapshot.hasData) {
-                      noteCount = snapshot.data!.docs.length;
+                    return StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('notes')
+                          .where('authorId', isEqualTo: authorId)
+                          .snapshots(),
+                      builder: (context, noteSnapshot) {
+                        final noteCount = noteSnapshot.data?.docs.length ?? 0;
 
-                      for (var doc in snapshot.data!.docs) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final likes = data['likes'];
-
-                        if (likes is List) {
-                          totalLikes += likes.length;
-                        }
-                      }
-                    }
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ProfileStatColumn(value: "$noteCount", label: 'Catatan'),
-                        const SizedBox(width: 40),
-                        ProfileStatColumn(value: "$totalLikes", label: 'Suka'),
-                      ],
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ProfileStatColumn(
+                              value: "$noteCount",
+                              label: 'Catatan',
+                            ),
+                            const SizedBox(width: 40),
+                            ProfileStatColumn(
+                              value: "$totalLikes",
+                              label: 'Suka',
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                 ),

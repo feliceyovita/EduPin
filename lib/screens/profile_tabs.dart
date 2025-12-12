@@ -926,42 +926,11 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF333333),
                           fontFamily: kFontFamily)),
-                  const Divider(height: 30),
-                  Row(
-                    children: [
-                      Image.asset('assets/images/notification.png',
-                          width: 24, height: 24, color: Colors.grey.shade700, errorBuilder: (_,__,___)=> const Icon(Icons.notifications, color: Colors.grey)),
-                      const SizedBox(width: 15),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Notifikasi',
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF333333),
-                                    fontFamily: kFontFamily)),
-                            Text('Terima notifikasi untuk aktivitas baru',
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey,
-                                    fontFamily: kFontFamily),
-                                overflow: TextOverflow.ellipsis),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                          value: _notificationsEnabled,
-                          onChanged: (val) =>
-                              setState(() => _notificationsEnabled = val),
-                          activeColor: const Color(0xFF2782FF)),
-                    ],
-                  ),
+                  const Divider(height: 20),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

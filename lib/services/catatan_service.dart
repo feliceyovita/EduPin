@@ -1,60 +1,66 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../models/note_details.dart';
 
 class NotesService {
-  // Instance Firestore dan Auth
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ==========================================
-  // BAGIAN 1: CRUD CATATAN (NOTES)
-  // ==========================================
+  // ======================================================
+  // 🔥 MIGRASI LIKE (SEKALI PAKAI, LALU HAPUS)
+  // ======================================================
+  Future<void> migrateLikes({
+    required String noteId,
+    required List<String> userIds,
+  }) async {
+    final batch = _db.batch();
+    final likesRef = _db
+        .collection('notes')
+        .doc(noteId)
+        .collection('likes');
 
-  // 1. TAMBAH CATATAN BARU
-  Future<DocumentReference> createNote(Map<String, dynamic> data) async {
-    if (!data.containsKey('createdAt')) {
-      data['createdAt'] = FieldValue.serverTimestamp();
+    for (final uid in userIds) {
+      batch.set(likesRef.doc(uid), {
+        'userId': uid,
+        'likedAt': FieldValue.serverTimestamp(),
+      });
     }
 
-    final docRef = await _db.collection("notes").add(data);
-    return docRef;
+    await batch.commit();
   }
 
+  // ======================================================
+  // BAGIAN 1: CRUD CATATAN
+  // ======================================================
+  Future<DocumentReference> createNote(Map<String, dynamic> data) async {
+    data['createdAt'] ??= FieldValue.serverTimestamp();
+    return await _db.collection('notes').add(data);
+  }
 
-  // 2. STREAM DAFTAR SEMUA CATATAN (HOME)
   Stream<List<NoteDetail>> streamNotes() {
     return _db
-        .collection("notes")
-        .orderBy("createdAt", descending: true)
+        .collection('notes')
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) =>
         snap.docs.map((d) => NoteDetail.fromFirestore(d)).toList());
   }
 
-  // 3. AMBIL 1 CATATAN BERDASARKAN ID (DETAIL)
   Future<NoteDetail> getNoteById(String noteId) async {
-    final doc = await _db.collection("notes").doc(noteId).get();
-
+    final doc = await _db.collection('notes').doc(noteId).get();
     if (!doc.exists) {
       throw Exception("Note dengan ID $noteId tidak ditemukan");
     }
-
     return NoteDetail.fromFirestore(doc);
   }
 
-  // 4. UPDATE CATATAN
   Future<void> updateNote(String noteId, Map<String, dynamic> data) async {
-    final docRef = _db.collection("notes").doc(noteId);
-    await docRef.update(data);
+    await _db.collection('notes').doc(noteId).update(data);
   }
 
-  // ==========================================
-  // BAGIAN 2: FITUR PIN / SIMPAN (USER SPECIFIC)
-  // ==========================================
-
-  // 5. SIMPAN CATATAN KE PIN USER
+  // ======================================================
+  // BAGIAN 2: PIN / SIMPAN
+  // ======================================================
   Future<void> simpanKePin(String noteId, String namaKoleksi) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("User belum login");
@@ -70,6 +76,7 @@ class NotesService {
       'savedAt': FieldValue.serverTimestamp(),
     });
   }
+
   Future<void> hapusPin(String noteId) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -82,8 +89,6 @@ class NotesService {
         .delete();
   }
 
-
-  // 6. CEK APAKAH CATATAN SUDAH DIPIN?
   Future<bool> isPinned(String noteId) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -98,16 +103,12 @@ class NotesService {
     return doc.exists;
   }
 
-  // ==========================================
-  // BAGIAN 3: KOLEKSI / PAPAN (BOARDS)
-  // ==========================================
-
-  // 7. AMBIL DAFTAR KOLEKSI USER
+  // ======================================================
+  // BAGIAN 3: BOARD
+  // ======================================================
   Stream<QuerySnapshot> streamKoleksi() {
     final user = _auth.currentUser;
-    if (user == null) {
-      return const Stream.empty();
-    }
+    if (user == null) return const Stream.empty();
 
     return _db
         .collection('users')
@@ -117,7 +118,6 @@ class NotesService {
         .snapshots();
   }
 
-  // 8. BUAT KOLEKSI BARU
   Future<void> buatPapanBaru(String namaPapan) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("User belum login");
@@ -133,7 +133,6 @@ class NotesService {
     });
   }
 
-  // 9. AMBIL NOTES DI DALAM PAPAN TERTENTU
   Future<List<NoteDetail>> getNotesInBoard(String boardName) async {
     final user = _auth.currentUser;
     if (user == null) return [];
@@ -146,47 +145,30 @@ class NotesService {
         .orderBy('savedAt', descending: true)
         .get();
 
-    List<NoteDetail> results = [];
-
     final futures = pinSnapshot.docs.map((doc) async {
-      final noteId = doc['noteId'];
       try {
-        final note = await getNoteById(noteId);
-        return note;
-      } catch (e) {
+        return await getNoteById(doc['noteId']);
+      } catch (_) {
         return null;
       }
     });
 
     final notes = await Future.wait(futures);
+    return notes.whereType<NoteDetail>().toList();
+  }
 
-    for (var n in notes) {
-      if (n != null) results.add(n);
-    }
-
-    return results;
-  } // <--- PENUTUP getNotesInBoard HARUSNYA DI SINI
-
-  // ==========================================
-  // 10. HAPUS PAPAN & ISI PIN-NYA
-  // ==========================================
-  // FUNGSI INI HARUS DI LUAR getNotesInBoard
   Future<void> hapusPapan(String boardId, String boardName) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     final batch = _db.batch();
 
-    // 1. Hapus Papan
-    final boardRef = _db
+    batch.delete(_db
         .collection('users')
         .doc(user.uid)
         .collection('boards')
-        .doc(boardId);
+        .doc(boardId));
 
-    batch.delete(boardRef);
-
-    // 2. Cari semua Pin terkait, lalu hapus
     final pinsSnapshot = await _db
         .collection('users')
         .doc(user.uid)
@@ -198,11 +180,12 @@ class NotesService {
       batch.delete(doc.reference);
     }
 
-    // 3. Jalankan batch
     await batch.commit();
   }
-  //likes
-  // cek apakah user sudah like
+
+  // ======================================================
+  // ❤️ LIKE (FINAL & BENAR)
+  // ======================================================
   Future<bool> isLiked(String noteId) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -213,26 +196,37 @@ class NotesService {
         .collection('likes')
         .doc(user.uid)
         .get();
+
     return doc.exists;
   }
 
-  // toggle like
-  Future<void> toggleLike(String noteId, bool like) async {
+  Future<void> toggleLike(String noteId, bool shouldLike) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception("User belum login");
 
-    final likeRef = _db.collection('notes').doc(noteId).collection('likes').doc(user.uid);
+    final likeRef = _db
+        .collection('notes')
+        .doc(noteId)
+        .collection('likes')
+        .doc(user.uid);
 
-    if (like) {
-      await likeRef.set({'likedAt': DateTime.now()});
+    if (shouldLike) {
+      await likeRef.set({
+        'userId': user.uid,
+        'likedAt': FieldValue.serverTimestamp(),
+      });
     } else {
       await likeRef.delete();
     }
   }
 
-  // ambil count like
   Future<int> getLikeCount(String noteId) async {
-    final snapshot = await _db.collection('notes').doc(noteId).collection('likes').get();
+    final snapshot = await _db
+        .collection('notes')
+        .doc(noteId)
+        .collection('likes')
+        .get();
+
     return snapshot.docs.length;
   }
 }

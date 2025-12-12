@@ -79,6 +79,7 @@ class AuthProvider with ChangeNotifier {
     if (currentUser == null) return;
 
     _isLoadingStats = true;
+    notifyListeners();
 
     try {
       final QuerySnapshot notesQuery = await _firestore
@@ -87,28 +88,30 @@ class AuthProvider with ChangeNotifier {
           .get();
 
       int notesCount = notesQuery.docs.length;
-      int likesCount = 0;
+      int totalLikes = 0;
 
       for (var doc in notesQuery.docs) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        final data = doc.data() as Map<String, dynamic>;
 
-        if (data.containsKey('likes') && data['likes'] is List) {
-          likesCount += (data['likes'] as List).length;
-        } else if (data.containsKey('likeCount') && data['likeCount'] is num) {
-          likesCount += (data['likeCount'] as num).toInt();
+        if (data['likes'] is List) {
+          totalLikes += (data['likes'] as List).length;
+        }
+        else if (data['likeCount'] is num) {
+          totalLikes += (data['likeCount'] as num).toInt();
         }
       }
 
       _totalCatatan = notesCount;
-      _totalSuka = likesCount;
+      _totalSuka = totalLikes;
 
     } catch (e) {
-      debugPrint("Error loading stats: $e");
+      debugPrint("❌ Error loading stats: $e");
     }
 
     _isLoadingStats = false;
     notifyListeners();
   }
+
 
   Future<void> updateProfile({
     required String nama,
