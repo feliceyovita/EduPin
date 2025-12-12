@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth/auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -243,6 +244,13 @@ class AuthProvider with ChangeNotifier {
     errorPrefix: 'Gagal update password',
   );
 
+  Future<void> signOut() async {
+    await _authService.signOut();
+    _user = null;
+    notifyListeners();
+  }
+
+
   Future<bool> reauthenticateWithEmail({
     required String email,
     required String password,
@@ -255,10 +263,11 @@ class AuthProvider with ChangeNotifier {
         errorPrefix: 'Re-authentication gagal',
       );
 
-  Future<bool> signOut() => _executeAuth(
-    _authService.signOut,
-    errorPrefix: 'Sign out gagal',
-  );
+  Future<void> logout() async {
+    await _authService.logout();
+    _user = null;
+    notifyListeners();
+  }
 
   Future<bool> deleteAccount({
     required String email,

@@ -35,7 +35,17 @@ class _PapanDetailScreenState extends State<PapanDetailScreen> {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              color: Colors.blue,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF4FA0FF),
+                    Color(0xFF2A7EFF),
+                    Color(0xFF165EFC),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

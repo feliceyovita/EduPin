@@ -629,8 +629,12 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => _forceNavigateToLogin(context),
-                    style: ElevatedButton.styleFrom(
+                      onPressed: () async {
+                        await context.read<AuthProvider>().signOut();
+                        context.go('/login');
+                      },
+
+                      style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFE11D48),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -926,11 +930,11 @@ class _ProfileSettingsTabState extends State<ProfileSettingsTab> {
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF333333),
                           fontFamily: kFontFamily)),
-                  const Divider(height: 20),
+                  const Divider(height: 30),
                 ],
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

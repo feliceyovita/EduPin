@@ -1,8 +1,6 @@
-import 'package:edupin/screens/login_screen.dart';
 import 'package:flutter/material.dart';
-// 1. Ganti import dari login_screen ke home_screen
-import 'package:edupin/screens/home_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -11,22 +9,25 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-// 2. TickerProviderStateMixin tidak lagi diperlukan karena animasinya dihapus
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
-
-    Future.delayed(const Duration(seconds: 3), () {
-      context.go('/login');
-    });
-
+    _navigate();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      context.go('/home');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override
@@ -36,50 +37,49 @@ class _SplashScreenState extends State<SplashScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 222, 229, 233),
-              Color.fromARGB(255, 232, 241, 245),
-              Color.fromARGB(255, 193, 207, 213),
+              Color(0xFFDEE5E9),
+              Color(0xFFE8F1F5),
+              Color(0xFFC1CFD5),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Hero(
-                  tag: "app_logo",
-                  child: Image.asset(
-                    "assets/images/logo.png",
-                    width: 200,
-                    height: 200,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Hero(
+                tag: 'app_logo',
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 200,
+                  height: 200,
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  "EduPin",
-                  style: TextStyle(
-                    fontFamily: "AlbertSans",
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2782FF),
-                  ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'EduPin',
+                style: TextStyle(
+                  fontFamily: 'AlbertSans',
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2782FF),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  "Platform Berbagi Catatan Pelajaran",
-                  style: TextStyle(
-                    fontFamily: "AlbertSans",
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Platform Berbagi Catatan Pelajaran',
+                style: TextStyle(
+                  fontFamily: 'AlbertSans',
+                  fontSize: 14,
+                  color: Colors.black54,
                 ),
-              ],
-            )
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -10,6 +11,7 @@ class AuthService {
   AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
@@ -26,11 +28,14 @@ class AuthService {
         password: password,
       );
 
-      // Set display name jika disediakan
       if (displayName != null && displayName.isNotEmpty) {
         await credential.user?.updateDisplayName(displayName);
         await credential.user?.reload();
       }
+
+      // SIMPAN STATUS LOGIN
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
 
       return credential;
     } on FirebaseAuthException catch (e) {
@@ -39,8 +44,6 @@ class AuthService {
       throw AuthException('Sign up failed: ${e.toString()}');
     }
   }
-
-  final _firestore = FirebaseFirestore.instance;
 
   Future<Map<String, dynamic>?> getUserData() async {
     final uid = _auth.currentUser?.uid;
@@ -56,16 +59,19 @@ class AuthService {
 
     await _firestore.collection('users').doc(uid).update(data);
   }
-
   Future<UserCredential> signInWithEmail({
     required String email,
     required String password,
   }) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+
+      return credential;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
@@ -73,7 +79,9 @@ class AuthService {
     }
   }
 
-
+  // ================================
+  // RESET PASSWORD
+  // ================================
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email.trim());
@@ -96,7 +104,6 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
-      if (e is AuthException) rethrow;
       throw AuthException('Failed to update password: ${e.toString()}');
     }
   }
@@ -114,31 +121,19 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
-      if (e is AuthException) rethrow;
       throw AuthException('Re-authentication failed: ${e.toString()}');
     }
   }
 
-  Future<void> signOut() async {
-    try {
-      // Sign out dari kedua service
-      // Note: Menggunakan signOut() bukan disconnect() agar user bisa login lagi
-      // tanpa harus memilih akun Google lagi
-      await Future.wait([
-        _auth.signOut(),
-        GoogleSignIn.instance.signOut(),
-      ]);
-    } catch (e) {
-      throw AuthException('Sign out failed: ${e.toString()}');
-    }
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+
+    await signOut();
   }
 
-  User _requireUser() {
-    final user = currentUser;
-    if (user == null) {
-      throw AuthException('No user is currently signed in');
-    }
-    return user;
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 
   Future<void> deleteAccount({
@@ -148,17 +143,14 @@ class AuthService {
     try {
       final user = _requireUser();
 
-      // re-authenticate
       final credential = EmailAuthProvider.credential(
         email: email.trim(),
         password: password.trim(),
       );
       await user.reauthenticateWithCredential(credential);
 
-      // hapus data firestore
       await _firestore.collection("users").doc(user.uid).delete();
 
-      // hapus akun auth
       await user.delete();
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
@@ -177,62 +169,38 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
-      if (e is AuthException) rethrow;
       throw AuthException('Failed to update $fieldName: ${e.toString()}');
     }
   }
 
+  User _requireUser() {
+    final user = currentUser;
+    if (user == null) {
+      throw AuthException('No user is currently signed in');
+    }
+    return user;
+  }
+
   AuthException _handleFirebaseAuthException(FirebaseAuthException e) {
     switch (e.code) {
-    // Sign Up Errors
       case 'weak-password':
         return AuthException('Password terlalu lemah. Minimal 6 karakter.');
       case 'email-already-in-use':
-        return AuthException(
-          'Email sudah terdaftar. Silakan login atau gunakan email lain.',
-        );
-
-    // Sign In Errors
+        return AuthException('Email sudah terdaftar.');
       case 'user-not-found':
-        return AuthException(
-          'Email tidak terdaftar. Silakan daftar terlebih dahulu.',
-        );
+        return AuthException('Email tidak ditemukan.');
       case 'wrong-password':
-        return AuthException('Password salah. Silakan coba lagi.');
+        return AuthException('Password salah.');
       case 'invalid-credential':
         return AuthException('Email atau password salah.');
-      case 'user-disabled':
-        return AuthException(
-          'Akun ini telah dinonaktifkan. Hubungi administrator.',
-        );
-
-    // Email Errors
       case 'invalid-email':
         return AuthException('Format email tidak valid.');
-
-    // Rate Limiting
       case 'too-many-requests':
-        return AuthException(
-          'Terlalu banyak percobaan. Silakan coba lagi nanti.',
-        );
-
-    // Requires Recent Login
+        return AuthException('Terlalu banyak percobaan.');
       case 'requires-recent-login':
-        return AuthException(
-          'Operasi sensitif. Silakan logout dan login kembali.',
-        );
-
-    // Network Errors
+        return AuthException('Silakan login ulang.');
       case 'network-request-failed':
-        return AuthException(
-          'Tidak ada koneksi internet. Periksa koneksi Anda.',
-        );
-
-    // Operation Not Allowed
-      case 'operation-not-allowed':
-        return AuthException('Operasi tidak diizinkan. Hubungi administrator.');
-
-    // Default
+        return AuthException('Tidak ada koneksi internet.');
       default:
         return AuthException('Error: ${e.message ?? e.code}');
     }
@@ -241,7 +209,6 @@ class AuthService {
 
 class AuthException implements Exception {
   final String message;
-
   AuthException(this.message);
 
   @override

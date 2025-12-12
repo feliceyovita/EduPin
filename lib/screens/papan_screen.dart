@@ -36,86 +36,96 @@ class _PapanScreenState extends State<PapanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: CustomScrollView(
-        slivers: [
-          // Header
-          SliverToBoxAdapter(
-            child: AppHeader(
-              hintText: "Cari Papan",
-              searchController: _searchC,
-            ),
+      body: Column(
+        children: [
+          AppHeader(
+            hintText: "Cari Papan",
+            searchController: _searchC,
           ),
 
-          // Stream papan
-          StreamBuilder<QuerySnapshot>(
-            stream: NotesService().streamKoleksi(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text("Error: ${snapshot.error}"),
-                  ),
-                );
-              }
-
-              final docs = snapshot.data?.docs ?? [];
-
-              // 🔍 Filter berdasarkan pencarian
-              final filteredDocs = docs.where((doc) {
-                final name = (doc.data() as Map<String, dynamic>)['name']?.toString().toLowerCase() ?? "";
-                final keyword = _searchC.text.toLowerCase();
-                return name.contains(keyword);
-              }).toList();
-
-              // Kosong
-              if (filteredDocs.isEmpty) {
-                return const SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text("Tidak ditemukan papan", style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                sliver: SliverGrid(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      final doc = filteredDocs[index];
-                      final data = doc.data() as Map<String, dynamic>;
-                      final boardName = data['name'] ?? 'Tanpa Nama';
-                      final boardId = doc.id;
-
-                      return _PapanCard(
-                        boardName: boardName,
-                        boardId: boardId,
+          // ==========================
+          // LIST KONTEN BISA SCROLL
+          // ==========================
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                StreamBuilder<QuerySnapshot>(
+                  stream: NotesService().streamKoleksi(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
                       );
-                    },
-                    childCount: filteredDocs.length,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.75,
-                  ),
+                    }
+
+                    if (snapshot.hasError) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text("Error: ${snapshot.error}"),
+                        ),
+                      );
+                    }
+
+                    final docs = snapshot.data?.docs ?? [];
+
+                    final filteredDocs = docs.where((doc) {
+                      final name = (doc.data() as Map<String, dynamic>)['name']
+                          ?.toString()
+                          .toLowerCase() ??
+                          "";
+                      final keyword = _searchC.text.toLowerCase();
+                      return name.contains(keyword);
+                    }).toList();
+
+                    if (filteredDocs.isEmpty) {
+                      return const SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.folder_open,
+                                  size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text("Tidak ditemukan papan",
+                                  style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
+                      sliver: SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                            final doc = filteredDocs[index];
+                            final data = doc.data() as Map<String, dynamic>;
+                            final boardName = data['name'] ?? 'Tanpa Nama';
+                            final boardId = doc.id;
+
+                            return _PapanCard(
+                              boardName: boardName,
+                              boardId: boardId,
+                            );
+                          },
+                          childCount: filteredDocs.length,
+                        ),
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 20,
+                          childAspectRatio: 0.75,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ],
+            ),
           ),
         ],
       ),

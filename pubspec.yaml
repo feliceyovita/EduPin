@@ -49,6 +49,7 @@ dependencies:
   gal: ^2.3.0 # Untuk menyimpan gambar ke galeri
   permission_handler: ^11.3.0 # Untuk minta izin akses penyimpanan
   path_provider: ^2.1.2
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:
