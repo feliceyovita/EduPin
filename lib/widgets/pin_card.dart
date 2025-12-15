@@ -48,19 +48,21 @@ class _PinCardState extends State<PinCard> {
   }
 
   void _toggleLike() async {
-    setState(() {
-      isLiked = !isLiked;
-      likeCount += isLiked ? 1 : -1;
-    });
-
     try {
-      await NotesService().toggleLike(widget.data.id, isLiked);
+      await NotesService().toggleLike(widget.data.id, !isLiked);
+
+      // ambil ulang dari Firestore (SUMBER KEBENARAN)
+      bool liked = await NotesService().isLiked(widget.data.id);
+      int count = await NotesService().getLikeCount(widget.data.id);
+
+      if (mounted) {
+        setState(() {
+          isLiked = liked;
+          likeCount = count;
+        });
+      }
     } catch (e) {
-      // rollback kalau gagal
-      setState(() {
-        isLiked = !isLiked;
-        likeCount += isLiked ? 1 : -1;
-      });
+      debugPrint("Error toggle like: $e");
     }
   }
 
@@ -91,7 +93,7 @@ class _PinCardState extends State<PinCard> {
     final overlay = Overlay.of(context);
     if (overlay == null) return;
 
-    final topPadding = MediaQuery.of(context).viewPadding.top + 8.0;
+    final topPadding = MediaQuery.of(context).viewPadding.top + 55.0;
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: topPadding,

@@ -8,10 +8,6 @@ import '../models/note_details.dart';
 import '../provider/auth_provider.dart';
 import 'detail_catatan.dart';
 
-// Pastikan file widget ini ada, atau hapus import jika tidak pakai
-// import '../widgets/profile_widgets.dart';
-// import '../utils/custom_notification.dart';
-
 const String kFontFamily = 'AlbertSans';
 
 // ==================================================

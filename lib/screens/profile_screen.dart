@@ -156,9 +156,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildUI(AuthProvider auth, Map<String, dynamic> data) {
-    const double blueHeaderHeight = 152.0;
+    const double blueHeaderHeight = 137.0;
     const double avatarTopPosition = 82.0;
-    const double avatarOuterRadius = 50.0; // Sedikit diperbesar
+    const double avatarOuterRadius = 50.0;
     const double avatarInnerRadius = 46.0;
 
     // Cek apakah user punya foto profil
@@ -303,7 +303,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         : const ProfileSettingsTab(),
                   ),
                 ),
-
                 const SizedBox(height: 30),
               ],
             ),

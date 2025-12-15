@@ -41,7 +41,7 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
     "lanjutan"
   ];
 
-  List<String> _subjects = [
+  final List<String> _subjects = [
     "Matematika dan Komputasi",
     "Ilmu Pengetahuan Alam",
     "Ilmu Sosial",
@@ -318,11 +318,14 @@ class _UploadCatatanScreenState extends State<UploadCatatanScreen> {
                         SizedBox(
                           height: 48,
                           width: 48,
-                          child: FilledButton(
-                            onPressed: _addTag,
-                            style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF2563EB)),
-                            child: const Icon(Icons.add),
+                          child: CircleAvatar(
+                            backgroundColor: const Color(0xFF2563EB),
+                            child: IconButton(
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              onPressed: _addTag,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
                           ),
                         ),
                       ],
