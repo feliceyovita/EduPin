@@ -144,7 +144,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               return filtered.isEmpty
                                   ? const Center(child: Text("Belum ada catatan publik."))
-                                  : GridView.builder(
+                                  :
+                              GridView.builder(
+                                padding: const EdgeInsets.only(bottom: 20),
                                 itemCount: filtered.length,
                                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: cols,

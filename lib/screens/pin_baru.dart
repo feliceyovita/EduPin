@@ -224,21 +224,28 @@ class _PinBaruScreenState extends State<PinBaruScreen> {
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
-              TextField(
-                controller: _titleC,
-                autofocus: true,
-                enabled: !_isLoading,
-                decoration: InputDecoration(
-                  hintText: 'Contoh: Kriptografi',
-                  prefixIcon: const Icon(
-                    Icons.edit_outlined,
-                    color: Color(0xFF2563EB),
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 700,
                   ),
-                  border: inputBorder,
-                  enabledBorder: inputBorder,
-                  focusedBorder: focusBorder,
-                  filled: true,
-                  fillColor: Colors.white,
+                  child: TextField(
+                    controller: _titleC,
+                    autofocus: true,
+                    enabled: !_isLoading,
+                    decoration: InputDecoration(
+                      hintText: 'Contoh: Kriptografi',
+                      prefixIcon: const Icon(
+                        Icons.edit_outlined,
+                        color: Color(0xFF2563EB),
+                      ),
+                      border: inputBorder,
+                      enabledBorder: inputBorder,
+                      focusedBorder: focusBorder,
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
