@@ -89,24 +89,44 @@ class AuthProvider with ChangeNotifier {
           .get();
 
       int notesCount = notesQuery.docs.length;
-      int totalLikes = 0;
 
-      for (var doc in notesQuery.docs) {
+      List<int> likesPerNote = await Future.wait(notesQuery.docs.map((doc) async {
         final data = doc.data() as Map<String, dynamic>;
+        int count = 0;
 
-        if (data['likes'] is List) {
-          totalLikes += (data['likes'] as List).length;
+        if (data['likes'] != null && data['likes'] is List) {
+          count = (data['likes'] as List).length;
+        } else if (data['likedBy'] != null && data['likedBy'] is List) {
+          count = (data['likedBy'] as List).length;
+        } else if (data['likes'] is num) {
+          count = (data['likes'] as num).toInt();
         }
-        else if (data['likeCount'] is num) {
-          totalLikes += (data['likeCount'] as num).toInt();
+
+        if (count == 0) {
+          try {
+            AggregateQuerySnapshot subLikes = await doc.reference.collection('likes').count().get();
+            if (subLikes.count != null && subLikes.count! > 0) {
+              count = subLikes.count!;
+            } else {
+              AggregateQuerySnapshot subLikedBy = await doc.reference.collection('likedBy').count().get();
+              if (subLikedBy.count != null && subLikedBy.count! > 0) {
+                count = subLikedBy.count!;
+              }
+            }
+          } catch (_) {
+          }
         }
-      }
+
+        return count;
+      }));
+
+      int totalLikes = likesPerNote.fold(0, (sum, count) => sum + count);
 
       _totalCatatan = notesCount;
       _totalSuka = totalLikes;
 
     } catch (e) {
-      debugPrint("❌ Error loading stats: $e");
+      debugPrint("Error loading stats: $e");
     }
 
     _isLoadingStats = false;
