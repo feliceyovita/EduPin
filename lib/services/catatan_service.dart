@@ -6,9 +6,6 @@ class NotesService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ======================================================
-  // 🔥 MIGRASI LIKE (SEKALI PAKAI, LALU HAPUS)
-  // ======================================================
   Future<void> migrateLikes({
     required String noteId,
     required List<String> userIds,
@@ -183,9 +180,6 @@ class NotesService {
     await batch.commit();
   }
 
-  // ======================================================
-  // ❤️ LIKE (FINAL & BENAR)
-  // ======================================================
   Future<bool> isLiked(String noteId) async {
     final user = _auth.currentUser;
     if (user == null) return false;

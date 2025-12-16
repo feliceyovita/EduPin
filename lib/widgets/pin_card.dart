@@ -137,7 +137,6 @@ class _PinCardState extends State<PinCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.data.publikasi == false) return const SizedBox.shrink();
 
     return Container(
       decoration: BoxDecoration(

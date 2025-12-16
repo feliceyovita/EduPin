@@ -145,33 +145,29 @@ class _PapanCard extends StatelessWidget {
 
   const _PapanCard({required this.boardName, required this.boardId});
 
-  Future<Map<String, dynamic>> _getPapanInfo() async {
+  // 1. Ganti jadi Stream agar update otomatis
+  Stream<QuerySnapshot> _getPinStream() {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return {'image': null, 'count': 0};
+    if (user == null) return const Stream.empty();
 
-    final db = FirebaseFirestore.instance;
-    final pinQuery = await db
+    return FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('pins')
         .where('collection', isEqualTo: boardName)
-        .orderBy('savedAt', descending: true)
-        .get();
+        .orderBy('savedAt', descending: true) // Urutkan dari yang terbaru
+        .snapshots(); // <--- KUNCI REALTIME UPDATE
+  }
 
-    final count = pinQuery.docs.length;
-    String? imageUrl;
-
-    if (pinQuery.docs.isNotEmpty) {
-      final noteId = pinQuery.docs.first.data()['noteId'];
-      try {
-        final note = await NotesService().getNoteById(noteId);
-        if (note.imageAssets.isNotEmpty) {
-          imageUrl = note.imageAssets.first;
-        }
-      } catch (_) {}
-    }
-
-    return {'image': imageUrl, 'count': count};
+  // Helper untuk ambil URL gambar dari noteId
+  Future<String?> _getCoverImage(String noteId) async {
+    try {
+      final note = await NotesService().getNoteById(noteId);
+      if (note.imageAssets.isNotEmpty) {
+        return note.imageAssets.first;
+      }
+    } catch (_) {}
+    return null;
   }
 
   void _showOptions(BuildContext context) {
@@ -227,11 +223,9 @@ class _PapanCard extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
-
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Menghapus papan...")),
               );
-
               try {
                 await NotesService().hapusPapan(boardId, boardName);
                 if (context.mounted) {
@@ -257,12 +251,15 @@ class _PapanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _getPapanInfo(),
+    // 2. Gunakan StreamBuilder di sini
+    return StreamBuilder<QuerySnapshot>(
+      stream: _getPinStream(),
       builder: (context, snapshot) {
-        final imageUrl = snapshot.data?['image'];
-        final count = snapshot.data?['count'] ?? 0;
-        final loading = snapshot.connectionState == ConnectionState.waiting;
+        final docs = snapshot.data?.docs ?? [];
+        final count = docs.length;
+
+        // Ambil noteId terbaru untuk dijadikan cover
+        final latestNoteId = docs.isNotEmpty ? docs.first['noteId'] : null;
 
         return GestureDetector(
           onTap: () {
@@ -288,11 +285,24 @@ class _PapanCard extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: loading
-                        ? const Center(child: CircularProgressIndicator())
-                        : imageUrl != null
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : _placeholder(),
+                    child: latestNoteId == null
+                        ? _placeholder() // Jika kosong langsung placeholder
+                        : FutureBuilder<String?>(
+                      // Fetch gambar hanya untuk item terbaru
+                      future: _getCoverImage(latestNoteId),
+                      builder: (context, imgSnapshot) {
+                        if (imgSnapshot.connectionState == ConnectionState.waiting) {
+                          return Container(color: Colors.grey[100]); // Loading state ringan
+                        }
+                        final imageUrl = imgSnapshot.data;
+
+                        if (imageUrl != null) {
+                          return Image.network(imageUrl, fit: BoxFit.cover);
+                        } else {
+                          return _placeholder();
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -312,7 +322,7 @@ class _PapanCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "$count pin",
+                      "$count pin", // Ini akan otomatis berubah sekarang
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.grey, fontSize: 13),
                     ),
