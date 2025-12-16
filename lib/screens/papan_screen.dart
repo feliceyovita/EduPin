@@ -19,10 +19,8 @@ class _PapanScreenState extends State<PapanScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Update UI realtime saat search berubah
     _searchC.addListener(() {
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
@@ -34,6 +32,12 @@ class _PapanScreenState extends State<PapanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    int crossAxisCount = screenWidth > 600 ? 3 : 2;
+
+    double childAspectRatio = 0.7;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: Column(
@@ -43,9 +47,6 @@ class _PapanScreenState extends State<PapanScreen> {
             searchController: _searchC,
           ),
 
-          // ==========================
-          // LIST KONTEN BISA SCROLL
-          // ==========================
           Expanded(
             child: CustomScrollView(
               slivers: [
@@ -61,7 +62,7 @@ class _PapanScreenState extends State<PapanScreen> {
                     if (snapshot.hasError) {
                       return SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(20),
                           child: Text("Error: ${snapshot.error}"),
                         ),
                       );
@@ -113,12 +114,11 @@ class _PapanScreenState extends State<PapanScreen> {
                           },
                           childCount: filteredDocs.length,
                         ),
-                        gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
                           mainAxisSpacing: 20,
                           crossAxisSpacing: 20,
-                          childAspectRatio: 0.75,
+                          childAspectRatio: childAspectRatio,
                         ),
                       ),
                     );
@@ -270,6 +270,7 @@ class _PapanCard extends StatelessWidget {
           },
           onLongPress: () => _showOptions(context),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AspectRatio(
                 aspectRatio: 1,
@@ -295,14 +296,29 @@ class _PapanCard extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 8),
-              Text(
-                boardName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      boardName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "$count pin",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-              Text("$count pin", style: const TextStyle(color: Colors.grey)),
             ],
           ),
         );
