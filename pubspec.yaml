@@ -50,6 +50,7 @@ dependencies:
   permission_handler: ^11.3.0 # Untuk minta izin akses penyimpanan
   path_provider: ^2.1.2
   shared_preferences: ^2.5.4
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -98,3 +99,10 @@ flutter:
           weight: 800
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+# App Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo.png"
