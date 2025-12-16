@@ -83,7 +83,7 @@ EduPin dikembangkan untuk menjawab permasalahan umum pelajar dalam mengelola sum
 
 | Login | Sign Up | Reset Password |
 |---|---|---|
-| <img src="preview_app/login_Preview.jpg" width="180"/> | <img src="preview_app/signup_Preview.jpg" width="180"/> | <img src="preview_app/reset_Password_Preview.jpg" width="180"/> |
+| <img src="preview_app/login_Preview.jpg" width="150"/> | <img src="preview_app/signup_Preview.jpg" width="150"/> | <img src="preview_app/reset_Password_Preview.jpg" width="150"/> |
 
 ---
 
@@ -91,23 +91,23 @@ EduPin dikembangkan untuk menjawab permasalahan umum pelajar dalam mengelola sum
 
 | Beranda | Pilih Kategori | Detail Catatan | Author Catatan |
 |---|---|---|---|
-| <img src="preview_app/beranda_Preview.jpg" width="180"/> | <img src="preview_app/select_Kategori_Preview.jpg" width="180"/> | <img src="preview_app/detail_Catatan_Preview.jpg" width="180"/> | <img src="preview_app/Author_Catatan_Preview.jpg" width="180"/> |
+| <img src="preview_app/beranda_Preview.jpg" width="150"/> | <img src="preview_app/select_Kategori_Preview.jpg" width="150"/> | <img src="preview_app/detail_Catatan_Preview.jpg" width="150"/> | <img src="preview_app/Author_Catatan_Preview.jpg" width="150"/> |
 
 ---
 
 ### Tampilan Aplikasi – Papan & Unggah Catatan
 
-| Buat Papan | Tambah Catatan | Tambah Catatan (2) | Field Tambah Catatan |
+| Papan | Buat papan | Tambah Catatan | Field Tambah Catatan |
 |---|---|---|---|
-| <img src="preview_app/buat_Papan_Preview.jpg" width="180"/> | <img src="preview_app/tambah_Catatan_Preview.jpg" width="180"/> | <img src="preview_app/tambah_Catatan2_Preview.jpg" width="180"/> | <img src="preview_app/field_Tambah_Catatan_Preview.jpg" width="180"/> |
+| <img src="preview_app/papan_Preview.jpg" width="150"/> |<img src="preview_app/buat_Papan_Preview.jpg" width="150"/> | <img src="preview_app/tambah_Catatan_Preview.jpg" width="150"/> | <img src="preview_app/tambah_Catatan2_Preview.jpg" width="150"/> |
 
 ---
 
 ###  Tampilan Aplikasi – Notifikasi & Manajemen Profil
 
-| Notifikasi | Profil Akun | Edit Profil | Manajemen Catatan | Pengaturan Akun |
+| Notifikasi | Profil Akun | Edit Profil | Manajemen Catatan | Pengaturan Akun | Hapus Akun | 
 |---|---|---|---|---|
-| <img src="preview_app/notifikasi_Preview.jpg" width="180"/> | <img src="preview_app/profil_Account_Preview.jpg" width="180"/> | <img src="preview_app/edit_Profile_Preview.jpg" width="180"/> | <img src="preview_app/manage_Catatan_Preview.jpg" width="180"/> | <img src="preview_app/pengaturan_Account_Preview.jpg" width="180"/> |
+| <img src="preview_app/notifikasi_Preview.jpg" width="150"/> | <img src="preview_app/profil_Account_Preview.jpg" width="150"/> | <img src="preview_app/edit_Profile_Preview.jpg" width="150"/> | <img src="preview_app/manage_Catatan_Preview.jpg" width="150"/> | <img src="preview_app/pengaturan_Account_Preview.jpg" width="150"/> |<img src="preview_app/hapus_Account_Preview.jpg" width="150"/> |
 
 ---
 ### Cara Menggunakan Aplikasi
