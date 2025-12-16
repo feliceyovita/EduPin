@@ -106,7 +106,7 @@ EduPin dikembangkan untuk menjawab permasalahan umum pelajar dalam mengelola sum
 ###  Tampilan Aplikasi – Notifikasi & Manajemen Profil
 
 | Notifikasi | Profil Akun | Edit Profil | Manajemen Catatan | Pengaturan Akun | Hapus Akun | 
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | <img src="preview_app/notifikasi_Preview.jpg" width="150"/> | <img src="preview_app/profil_Account_Preview.jpg" width="150"/> | <img src="preview_app/edit_Profile_Preview.jpg" width="150"/> | <img src="preview_app/manage_Catatan_Preview.jpg" width="150"/> | <img src="preview_app/pengaturan_Account_Preview.jpg" width="150"/> |<img src="preview_app/hapus_Account_Preview.jpg" width="150"/> |
 
 ---
