@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth/auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -11,6 +11,8 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   String? _errorMessage;
+
+  StreamSubscription<QuerySnapshot>? _statsSubscription;
 
   int _totalCatatan = 0;
   int _totalSuka = 0;
@@ -67,7 +69,8 @@ class AuthProvider with ChangeNotifier {
         };
       }
 
-      await loadUserStats();
+      loadUserStats();
+
     } catch (e) {
       debugPrint("Error loading profile: $e");
     }
@@ -76,21 +79,23 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadUserStats() async {
+  void loadUserStats() {
+    _statsSubscription?.cancel();
+
     if (currentUser == null) return;
 
     _isLoadingStats = true;
     notifyListeners();
 
-    try {
-      final QuerySnapshot notesQuery = await _firestore
-          .collection('notes')
-          .where('authorId', isEqualTo: currentUser!.uid)
-          .get();
+    _statsSubscription = _firestore
+        .collection('notes')
+        .where('authorId', isEqualTo: currentUser!.uid)
+        .snapshots()
+        .listen((notesSnapshot) async {
 
-      int notesCount = notesQuery.docs.length;
+      int notesCount = notesSnapshot.docs.length;
 
-      List<int> likesPerNote = await Future.wait(notesQuery.docs.map((doc) async {
+      List<int> likesPerNote = await Future.wait(notesSnapshot.docs.map((doc) async {
         final data = doc.data() as Map<String, dynamic>;
         int count = 0;
 
@@ -113,10 +118,8 @@ class AuthProvider with ChangeNotifier {
                 count = subLikedBy.count!;
               }
             }
-          } catch (_) {
-          }
+          } catch (_) {}
         }
-
         return count;
       }));
 
@@ -124,15 +127,15 @@ class AuthProvider with ChangeNotifier {
 
       _totalCatatan = notesCount;
       _totalSuka = totalLikes;
+      _isLoadingStats = false;
+      notifyListeners();
 
-    } catch (e) {
-      debugPrint("Error loading stats: $e");
-    }
-
-    _isLoadingStats = false;
-    notifyListeners();
+    }, onError: (e) {
+      debugPrint("Error listening to stats: $e");
+      _isLoadingStats = false;
+      notifyListeners();
+    });
   }
-
 
   Future<void> updateProfile({
     required String nama,
@@ -161,6 +164,7 @@ class AuthProvider with ChangeNotifier {
         userProfile = null;
         _totalCatatan = 0;
         _totalSuka = 0;
+        _statsSubscription?.cancel();
       }
 
       notifyListeners();
@@ -173,7 +177,6 @@ class AuthProvider with ChangeNotifier {
       }
     });
   }
-
 
   Future<bool> _executeAuth(
       Future<void> Function() operation, {
@@ -265,11 +268,11 @@ class AuthProvider with ChangeNotifier {
   );
 
   Future<void> signOut() async {
+    _statsSubscription?.cancel();
     await _authService.signOut();
     _user = null;
     notifyListeners();
   }
-
 
   Future<bool> reauthenticateWithEmail({
     required String email,
@@ -284,10 +287,12 @@ class AuthProvider with ChangeNotifier {
       );
 
   Future<void> logout() async {
+    _statsSubscription?.cancel(); // Pastikan listener dimatikan
     await _authService.logout();
     _user = null;
     notifyListeners();
   }
+
   Future<bool> deleteAccount({
     required String email,
     required String password,
@@ -303,6 +308,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> deleteUserAndAllDataFull(String password) async {
     final uid = currentUser?.uid;
     if (uid == null) return;
+
+    _statsSubscription?.cancel();
 
     try {
       await reauthenticateWithEmail(
