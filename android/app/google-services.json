@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "67802230616",
+    "firebase_url": "https://edupin-1e337-default-rtdb.firebaseio.com",
     "project_id": "edupin-1e337",
     "storage_bucket": "edupin-1e337.firebasestorage.app"
   },
@@ -13,6 +14,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "67802230616-945sis8llvldkgki49kp14kg881qjdp2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.edupin",
+            "certificate_hash": "6d7ac3fc8daf5b91188c140f2fc06a9140a2e7cd"
+          }
+        },
         {
           "client_id": "67802230616-j7m8afujp0j8eqpqsqaodm36qfdtikmg.apps.googleusercontent.com",
           "client_type": 1,
