@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../provider/auth_provider.dart';
+import '../utils/custom_notification.dart';
 import '../widgets/logoApp_bgBlue.dart';
 import '../widgets/text_field.dart';
 
@@ -202,15 +203,11 @@ class _SignupScreenState extends State<SignupScreen> {
                                 child: ElevatedButton(
                                   onPressed: () async {
                                     if (!isChecked) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Harap setujui syarat dan ketentuan')),
-                                      );
+                                      showTopOverlay(context, 'Harap setujui syarat dan ketentuan', isError: true,);
                                       return;
                                     }
                                     if (passwordController.text != confirmPasswordController.text) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Password dan konfirmasi tidak sama')),
-                                      );
+                                      showTopOverlay(context, 'Password dan konfirmasi tidak sama', isError: true,);
                                       return;
                                     }
 
@@ -244,24 +241,21 @@ class _SignupScreenState extends State<SignupScreen> {
                                           'createdAt': FieldValue.serverTimestamp(),
                                         });
 
-                                        if (context.mounted) {
-                                          context.go('/login');
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Berhasil membuat akun')),
-                                          );
+                                        if (context.mounted)
+                                          {showTopOverlay(context, 'Berhasil membuat akun', isError: false,);
+
+                                          Future.delayed(const Duration(milliseconds: 500), () {
+                                            if (context.mounted) {context.go('/login');}
+                                          });
                                         }
                                       } catch (e) {
                                         if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Gagal menyimpan data: $e')),
-                                          );
+                                          showTopOverlay(context, 'Gagal menyimpan data: $e', isError: true,);
                                         }
                                       }
                                     } else {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text(authProvider.errorMessage ?? 'Gagal mendaftar')),
-                                        );
+                                        showTopOverlay(context, authProvider.errorMessage ?? 'Gagal mendaftar', isError: true,);
                                       }
                                     }
                                   },

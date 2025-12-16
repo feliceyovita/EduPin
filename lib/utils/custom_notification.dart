@@ -7,7 +7,8 @@ void showTopOverlay(BuildContext context, String message,
 
   removeOverlay();
 
-  final overlay = Overlay.of(context);
+  final overlay = Overlay.of(context, rootOverlay: true);
+  if (overlay == null) return;
   _overlayEntry = OverlayEntry(
     builder: (context) {
       return SafeArea(

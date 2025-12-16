@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:edupin/services/auth/auth_service.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/custom_notification.dart';
 import '../widgets/logoApp_bgBlue.dart';
 import '../widgets/text_field.dart';
 import '../utils/validators.dart';
-import '../utils/snackbar_helper.dart';
 import '../provider/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -36,32 +34,26 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = passwordController.text.trim();
 
     final emailError = Validators.validateEmail(email);
-    if (emailError != null) {
-      SnackbarHelper.showError(context, emailError);
+    if (emailError != null) {showTopOverlay(context, emailError, isError: true,);
       return;
     }
 
     final passError = Validators.validatePassword(password);
-    if (passError != null) {
-      SnackbarHelper.showError(context, passError);
+    if (passError != null) {showTopOverlay(context, passError, isError: true,);
       return;
     }
 
-    // 🔹 Proses Login
+    // Proses Login
     final success = await authProvider.signInWithEmail(
       email: email,
       password: password,
     );
 
-    if (success) {
-      SnackbarHelper.showSuccess(context, 'Login berhasil!');
+    if (success) {showTopOverlay(context, 'Login berhasil!', isError: false,);
       context.go('/home'); // pastikan route ada
-    } else {
-      SnackbarHelper.showError(
-        context,
-        authProvider.errorMessage ?? 'Login gagal',
-      );
+    } else {showTopOverlay(context, authProvider.errorMessage ?? 'Login gagal', isError: true,);
     }
+
   }
   @override
   Widget build(BuildContext context) {
