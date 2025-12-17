@@ -1,5 +1,6 @@
-### Anggota Tim
+### kelompok Byte Three
 
+#### Anggota Tim
 | No | Nama |
 |----|------|
 | 1 | Chyntia Claudia (231401006) |
@@ -109,6 +110,8 @@ EduPin dikembangkan untuk menjawab permasalahan umum pelajar dalam mengelola sum
 |---|---|---|---|---|---|
 | <img src="preview_app/notifikasi_Preview.jpg" width="150"/> | <img src="preview_app/profil_Account_Preview.jpg" width="150"/> | <img src="preview_app/edit_Profile_Preview.jpg" width="150"/> | <img src="preview_app/manage_Catatan_Preview.jpg" width="150"/> | <img src="preview_app/pengaturan_Account_Preview.jpg" width="150"/> |<img src="preview_app/hapus_Account_Preview.jpg" width="150"/> |
 
+---
+[dokumen-edupin](https://drive.google.com/drive/folders/1-uGmA9mm7lJtzxpKosbdR5XKMsEJrZW8?usp=drive_link)
 ---
 ### Cara Menggunakan Aplikasi
 
