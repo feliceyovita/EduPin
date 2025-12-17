@@ -12,9 +12,6 @@ class ProfileUserScreen extends StatelessWidget {
 
   const ProfileUserScreen({super.key, required this.authorId});
 
-  // ======================================
-  // 🔥 TARUH FUNCTION INI DI SINI
-  // ======================================
   Future<int> _countTotalLikes(String authorId) async {
     debugPrint("CHECK AUTHOR ID: $authorId");
     final notesQuery = await FirebaseFirestore.instance

@@ -1,4 +1,4 @@
-import 'dart:io'; // Import ini untuk File
+import 'dart:io';
 import 'package:edupin/screens/profile_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // Import Image Picker
@@ -115,8 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       final File file = File(image.path);
       final String fileName = 'avatar_${auth.user!.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      // 2. Upload ke Supabase (Bucket: avatars)
-      // Pastikan kamu sudah buat bucket bernama 'avatars' di Supabase dashboard
+      // 2. Upload ke Supabase (Bucket: avatar
       await Supabase.instance.client.storage
           .from('avatars')
           .upload(fileName, file);

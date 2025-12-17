@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:edupin/services/supabase_storage_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/note_details.dart';
 
 class NotesService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SupabaseStorageService _storage = SupabaseStorageService();
+
 
   Future<void> migrateLikes({
     required String noteId,
@@ -85,6 +88,17 @@ class NotesService {
         .doc(noteId)
         .delete();
   }
+  Future<void> deleteNote(String noteId) async {
+    final doc = await _db.collection('notes').doc(noteId).get();
+    if (!doc.exists) return;
+    final data = doc.data()!;
+    final List images = data['imageAssets'] ?? [];
+    for (final url in images) {
+      await _storage.deleteImageByUrl(url);
+    }
+    await _db.collection('notes').doc(noteId).delete();
+  }
+
 
   Future<bool> isPinned(String noteId) async {
     final user = _auth.currentUser;

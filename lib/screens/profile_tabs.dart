@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../models/note_details.dart';
 import '../provider/auth_provider.dart';
+import '../services/catatan_service.dart';
 import 'detail_catatan.dart';
 
 const String kFontFamily = 'AlbertSans';
@@ -259,6 +260,7 @@ class ProfileNotesTab extends StatefulWidget {
 class _ProfileNotesTabState extends State<ProfileNotesTab> {
   // Variabel state untuk toggle edit
   bool _isEditingNotes = false;
+  final NotesService notesService = NotesService();
 
   void _toggleEdit() {
     setState(() {
@@ -532,7 +534,7 @@ class _ProfileNotesTabState extends State<ProfileNotesTab> {
                         const SizedBox(width: 10),
                         OutlinedButton.icon(
                           onPressed: () async {
-                            await FirebaseFirestore.instance.collection('notes').doc(note['docId']).delete();
+                            await notesService.deleteNote(note['docId']);
                           },
                           icon: Image.asset(
                             'assets/images/delete.png',
