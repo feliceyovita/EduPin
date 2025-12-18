@@ -138,7 +138,7 @@ Aplikasi ini dibangun menggunakan ekosistem **Flutter** dengan integrasi layanan
 |--------|-----------|
 | **Framework** | Flutter (Dart) |
 | **Platform** | Android |
-| **Authentication** | Firebase Authentication & Google Sign-In |
+| **Authentication** | Firebase Authentication |
 | **Database** | Firebase Firestore |
 | **Storage** | Supabase Storage |
 | **State Management** | Provider |
